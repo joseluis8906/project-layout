@@ -1,0 +1,9 @@
+service: banking
+proto: banking.proto
+method: banking.BankService.CreditAccount
+headers:
+body:
+  account: 428365483
+  money:
+    amount: 100
+    currency: "USD"

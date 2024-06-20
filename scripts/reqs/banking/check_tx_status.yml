@@ -1,0 +1,6 @@
+service: banking
+proto: banking.proto
+method: banking.BankService.CheckTxStatus
+headers:
+body:
+  tx_id: 2024061900001

@@ -1,0 +1,6 @@
+service: mtx 
+proto: mtx.proto
+method: mtx.TxService.CheckTxStatus
+headers:
+body:
+  id: 20240619000001

@@ -1,0 +1,16 @@
+service: osp 
+proto: osp.proto
+method: osp.TxService.Request
+headers:
+body:
+  src_account:
+    bank:
+      id: "itau"
+      account: 395761985
+  dst_account:
+    bank:
+      id: "bbva"
+      account: 947382657
+  money:
+    amount: 20
+    currency: "USD"

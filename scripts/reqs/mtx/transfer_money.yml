@@ -1,0 +1,7 @@
+service: mtx 
+proto: mtx.proto
+method: mtx.TxService.TransferMoney
+headers:
+body:
+  src_phone_number: +571234567890
+  dst_phone_number: +572345678901

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package integrations;
+
+option go_package = "github.com/joseluis8906/project-layout/pkg/pb";
+
+message Money {
+    uint64 amount = 1;
+    uint32 decimals = 2;
+    string currency = 3;
+}

@@ -1,0 +1,5 @@
+service: ${{ service_name }}
+proto: ${{ file.proto }}
+method: ${{ package.Service.Method }}
+headers:
+body:

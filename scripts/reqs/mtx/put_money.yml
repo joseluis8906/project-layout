@@ -1,0 +1,12 @@
+service: mtx 
+proto: mtx.proto
+method: mtx.TxService.PutMoney
+headers:
+body:
+  phone_number: +571234567890
+  money:
+    amount: 50
+    currency: "USD"
+  bank:
+    id: city bank
+    account: 4002546387

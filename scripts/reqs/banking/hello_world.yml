@@ -1,0 +1,6 @@
+service: banking
+proto: hello.proto
+method: banking.HelloService.World
+headers:
+body:
+  msg: it works

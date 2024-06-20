@@ -1,0 +1,8 @@
+service: banking 
+proto: banking.proto
+method: banking.BankService.CreateAccount
+headers:
+body:
+  id: 1234567890
+  country: CO
+  email: john.doe@example.com
