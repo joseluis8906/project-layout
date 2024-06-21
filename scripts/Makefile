@@ -16,6 +16,7 @@ pos-debug:
 
 # banking
 .PHONY: banking-build
+banking-build:
 	@cd scripts/banking && make build
 
 .PHONY: banking-run

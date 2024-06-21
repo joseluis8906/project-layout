@@ -1,8 +1,9 @@
 service: banking 
-proto: banking.proto
-method: banking.BankService.CreateAccount
+proto: account.proto
+method: banking.AccountService.CreateAccount
 headers:
 body:
-  id: 1234567890
+  id: '1234567890'
   country: CO
   email: john.doe@example.com
+  full_name: John Doe

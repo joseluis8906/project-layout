@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package banking;
+
+option go_package = "github.com/joseluis8906/project-layout/internal/banking/pb";
+
+service AccountService {
+    rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+}
+
+message CreateAccountRequest {
+    string id = 1;
+    string country = 2;
+    string email = 3;
+    string full_name = 4;
+}
+
+message CreateAccountResponse {
+    string type = 1;
+    string number = 2;
+}
+

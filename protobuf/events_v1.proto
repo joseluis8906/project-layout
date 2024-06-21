@@ -10,4 +10,15 @@ message V1 {
         int64 occurred_on = 2;
         string msg = 3;
     }
+
+    message AccountCreated {
+        message Attributes {
+            string type = 3;
+            string number = 4;
+        }
+
+        string id = 1;
+        int64 occurred_on = 2;
+        Attributes attributes = 3;
+    }
 }
