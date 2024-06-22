@@ -3,9 +3,9 @@ module github.com/joseluis8906/project-layout
 go 1.22.3
 
 require (
+	github.com/Rhymond/go-money v1.0.13
 	github.com/confluentinc/confluent-kafka-go v1.9.2
 	github.com/fluent/fluent-logger-golang v1.9.0
-	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/nats-io/nats.go v1.34.1
 	github.com/prometheus/client_golang v1.19.1

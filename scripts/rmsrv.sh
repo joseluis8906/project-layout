@@ -25,7 +25,7 @@ fi
 
 DIRECTORY="../configs/$SRV_NAME.yml"
 echo "🔥 deleting $DIRECTORY"
-if [ -d "$DIRECTORY" ]; then
+if [ -f "$DIRECTORY" ]; then
     rm $DIRECTORY
 fi
 

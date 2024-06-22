@@ -2,18 +2,6 @@
 pb: 
 	@./scripts/generatepb.sh
 
-# pos
-.PHONY: pos-build
-	@cd scripts/pos && make build
-
-.PHONY: pos-run
-pos-run:
-	@cd scripts/pos && make run
-
-.PHONY: pos-debug
-pos-debug:
-	@cd scripts/pos && make debug 
-
 # banking
 .PHONY: banking-build
 banking-build:

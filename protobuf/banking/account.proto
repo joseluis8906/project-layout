@@ -2,21 +2,35 @@ syntax = "proto3";
 
 package banking;
 
+import "finance.proto";
 option go_package = "github.com/joseluis8906/project-layout/internal/banking/pb";
 
 service AccountService {
     rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+    rpc CreditAccount(CreditAccountRequest) returns (CreditAccountResponse);
 }
 
 message CreateAccountRequest {
-    string id = 1;
-    string country = 2;
-    string email = 3;
-    string full_name = 4;
+    message Owner {
+        string id = 1;
+        string country = 2;
+        string email = 3;
+        string full_name = 4;
+    }
+
+    string type = 1;
+    string currency = 2;
+    Owner owner = 3;
 }
 
 message CreateAccountResponse {
-    string type = 1;
-    string number = 2;
+    string number = 1;
 }
 
+message CreditAccountRequest {
+    string type = 1;
+    string number = 2;
+    company.Money amount = 3;
+}
+
+message CreditAccountResponse {}

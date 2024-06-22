@@ -3,7 +3,10 @@ proto: account.proto
 method: banking.AccountService.CreateAccount
 headers:
 body:
-  id: '1234567890'
-  country: CO
-  email: john.doe@example.com
-  full_name: John Doe
+  type: saving account
+  currency: COP
+  owner:
+    id: '1234567890'
+    country: CO
+    email: john.doe@example.com
+    full_name: John Doe

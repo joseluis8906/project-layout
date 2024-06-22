@@ -1,9 +1,10 @@
 service: banking
-proto: banking.proto
-method: banking.BankService.CreditAccount
+proto: account.proto
+method: banking.AccountService.CreditAccount
 headers:
 body:
-  account: 428365483
-  money:
-    amount: 100
-    currency: "USD"
+  type: saving account
+  number: '1719018310'
+  amount:
+    amount: 1000000
+    currency: "COP"

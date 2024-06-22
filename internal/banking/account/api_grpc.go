@@ -2,13 +2,15 @@ package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/joseluis8906/project-layout/internal/banking/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
-	evtpb "github.com/joseluis8906/project-layout/pkg/pb"
+	"github.com/joseluis8906/project-layout/pkg/money"
+	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/google/uuid"
@@ -26,19 +28,24 @@ type (
 
 	Service struct {
 		pb.UnimplementedAccountServiceServer
-		log       *log.Logger
-		kafka     *kafka.Conn
-		accounter interface {
+		log          *log.Logger
+		kafka        *kafka.Conn
+		accountAdder interface {
 			Add(context.Context, Account) error
+		}
+		accountGetter interface {
+			Get(context.Context, string, string) (Account, error)
 		}
 	}
 )
 
 func New(deps Deps) *Service {
+	accountRepo := NewAccountRepo(deps.Mongodb)
 	s := &Service{
-		log:       deps.Log,
-		kafka:     deps.Kafka,
-		accounter: NewAccountRepo(deps.Mongodb),
+		log:           deps.Log,
+		kafka:         deps.Kafka,
+		accountAdder:  accountRepo,
+		accountGetter: accountRepo,
 	}
 
 	return s
@@ -46,13 +53,14 @@ func New(deps Deps) *Service {
 
 func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
 	account := Account{
-		Type:   "saving account",
-		Number: fmt.Sprintf("%d", time.Now().Unix()),
+		Number:  fmt.Sprintf("%d", time.Now().Unix()),
+		Type:    req.Type,
+		Balance: money.New(0, req.Currency),
 		Owner: Owner{
-			ID:       req.Id,
-			Email:    req.Email,
-			Country:  req.Country,
-			FullName: req.FullName,
+			ID:       req.Owner.Id,
+			Email:    req.Owner.Email,
+			Country:  req.Owner.Country,
+			FullName: req.Owner.FullName,
 		},
 	}
 
@@ -61,16 +69,16 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 		return nil, fmt.Errorf("validating account owner: %w", err)
 	}
 
-	err := s.accounter.Add(ctx, account)
+	err := s.accountAdder.Add(ctx, account)
 	if err != nil {
 		log.Printf("adding account: %v", err)
 		return nil, fmt.Errorf("adding account: %w", err)
 	}
 
-	evt, err := proto.Marshal(&evtpb.V1_AccountCreated{
+	evt, err := proto.Marshal(&pkgpb.V1_AccountCreated{
 		Id:         uuid.New().String(),
 		OccurredOn: time.Now().UnixMilli(),
-		Attributes: &evtpb.V1_AccountCreated_Attributes{
+		Attributes: &pkgpb.V1_AccountCreated_Attributes{
 			Type:   account.Type,
 			Number: account.Number,
 		},
@@ -84,5 +92,44 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 		s.log.Printf("publishing event: %v", err)
 	}
 
-	return &pb.CreateAccountResponse{Type: account.Type, Number: account.Number}, nil
+	return &pb.CreateAccountResponse{Number: account.Number}, nil
+}
+
+func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountRequest) (*pb.CreditAccountResponse, error) {
+	account, err := s.accountGetter.Get(ctx, req.Type, req.Number)
+	if err != nil {
+		return nil, fmt.Errorf("getting account: %w", err)
+	}
+
+	if account.IsZero() {
+		return nil, errors.New("account does not exist")
+	}
+
+	amount := money.New(req.Amount.Amount, req.Amount.Currency)
+	if err := account.Credit(amount); err != nil {
+		return nil, fmt.Errorf("crediting account: %w", err)
+	}
+
+	if err = s.accountAdder.Add(ctx, account); err != nil {
+		return nil, fmt.Errorf("updating account: %w", err)
+	}
+
+	evt, err := proto.Marshal(&pkgpb.V1_AccountCredited{
+		Id:         uuid.New().String(),
+		OccurredOn: time.Now().UnixMilli(),
+		Attributes: &pkgpb.V1_AccountCredited_Attributes{
+			Type:   account.Type,
+			Number: account.Number,
+			Amount: fmt.Sprintf("%s", amount),
+		},
+	})
+	if err != nil {
+		s.log.Printf("marshaling event: %v", err)
+	}
+
+	if err := s.kafka.Publish("v1.account_credited", evt); err != nil {
+		s.log.Printf("publishing event: %v", err)
+	}
+
+	return &pb.CreditAccountResponse{}, nil
 }

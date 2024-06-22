@@ -40,3 +40,21 @@ func (r *AccountRepo) Add(ctx context.Context, account Account) error {
 
 	return nil
 }
+
+func (r *AccountRepo) Get(ctx context.Context, aType string, number string) (Account, error) {
+	_, span := otel.Tracer("").Start(ctx, "banking.AccountRepository/Get")
+	defer span.End()
+
+	filter := bson.D{{Key: "type", Value: aType}, {Key: "number", Value: number}}
+	cur := r.db.FindOne(ctx, filter)
+	if err := cur.Err(); err != nil {
+		return Account{}, fmt.Errorf("upserting account: %w", err)
+	}
+
+	var account Account
+	if err := cur.Decode(&account); err != nil {
+		return Account{}, fmt.Errorf("decoding account: %w", err)
+	}
+
+	return account, nil
+}

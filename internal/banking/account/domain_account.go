@@ -3,13 +3,16 @@ package account
 import (
 	"errors"
 	"regexp"
+
+	"github.com/joseluis8906/project-layout/pkg/money"
 )
 
 type (
 	Account struct {
-		Type   string `bson:"type"`
-		Number string `bson:"number"`
-		Owner  Owner  `bson:"owner"`
+		Type    string      `bson:"type"`
+		Number  string      `bson:"number"`
+		Balance money.Money `bson:"balance"`
+		Owner   Owner       `bson:"owner"`
 	}
 
 	Owner struct {
@@ -41,5 +44,19 @@ func (a Account) Validate() error {
 		return errors.New("invalid country")
 	}
 
+	return nil
+}
+
+func (a Account) IsZero() bool {
+	return a.Type == "" || a.Number == ""
+}
+
+func (a *Account) Credit(amount money.Money) error {
+	if a.Balance.Currency != amount.Currency {
+		return errors.New("different currencies")
+	}
+
+	v := a.Balance.Add(amount)
+	a.Balance = v
 	return nil
 }
