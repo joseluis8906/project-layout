@@ -6,11 +6,10 @@ import (
 	"log"
 	"net"
 	"net/http"
-	_ "net/http/pprof"
+    _ "net/http/pprof"
 
-	"github.com/joseluis8906/project-layout/internal/banking/account"
-	"github.com/joseluis8906/project-layout/internal/banking/pb"
-	"github.com/joseluis8906/project-layout/internal/banking/tx"
+	"github.com/joseluis8906/project-layout/internal/mtx/hello"
+	"github.com/joseluis8906/project-layout/internal/mtx/pb"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
@@ -25,10 +24,9 @@ import (
 type (
 	Deps struct {
 		fx.In
-		Config         *viper.Viper
-		Log            *log.Logger
-		AccountService *account.Service
-		TxService      *tx.Service
+		Config       *viper.Viper
+		Log          *log.Logger
+		HelloService *hello.Service
 	}
 )
 
@@ -51,8 +49,7 @@ func NewGRPCServer(lc fx.Lifecycle, deps Deps) *grpc.Server {
 			}
 
 			grpcServer = grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
-			pb.RegisterAccountServiceServer(grpcServer, deps.AccountService)
-			pb.RegisterTxServiceServer(grpcServer, deps.TxService)
+			pb.RegisterHelloServiceServer(grpcServer, deps.HelloService)
 			go func() {
 				err := grpcServer.Serve(lis)
 				if err != nil {

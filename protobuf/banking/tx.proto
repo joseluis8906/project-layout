@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package banking;
+
+import "finance.proto";
+option go_package = "github.com/joseluis8906/project-layout/internal/banking/pb";
+
+service TxService {
+    rpc InitTx(InitTxRequest) returns (InitTxResponse);
+}
+
+message InitTxRequest {
+    TxBank src_bank = 1;
+    TxBank dst_bank = 2;
+    company.Money amount = 3;
+}
+
+message InitTxJob {
+    string id = 1;
+    TxBank src_bank = 2;
+    TxBank dst_bank = 3;
+    company.Money amount = 4;
+}
+
+message InitTxResponse {
+    string tx_id = 1;
+}
+
+message TxBank {
+    string name = 1;
+    string account = 2;
+}

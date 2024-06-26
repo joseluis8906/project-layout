@@ -33,6 +33,8 @@ kafka:
     - v1.tested
 mongodb:
   uri: 'mongodb://yummies:yummies@yummies.local:27017/$SRV_NAME?authMechanism=PLAIN'
+rabbitmq:
+    url: 'amqp://guest:guest@yummies.local:5672/'
 pprof: true
 EOF
 

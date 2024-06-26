@@ -1,5 +1,5 @@
 app:
-  name: banking
+  name: mtx
 otel:
   endpoint: http://yummies.local:4317
 fluentd:
@@ -19,14 +19,12 @@ kafka:
     servers: 'yummies.local:9092'
   acks: all
   group:
-    id: banking
+    id: mtx
   auto:
     offset:
       reset: earliest
   topics:
     - v1.tested
 mongodb:
-  uri: 'mongodb://yummies:yummies@yummies.local:27017/banking?authMechanism=PLAIN'
-rabbitmq:
-    url: 'amqp://guest:guest@yummies.local:5672/'
+  uri: 'mongodb://yummies:yummies@yummies.local:27017/mtx?authMechanism=PLAIN'
 pprof: true

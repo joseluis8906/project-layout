@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package osp;
+
+option go_package = "github.com/joseluis8906/project-layout/internal/osp/pb";
+
+service HelloService {
+    rpc World(HelloWorldRequest) returns (HelloWorldResponse);
+}
+
+message HelloWorldRequest {
+    string msg = 1;
+}
+
+message HelloWorldResponse {
+    string msg = 1;
+}

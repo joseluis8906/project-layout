@@ -1,0 +1,10 @@
+service: mtx 
+proto: mtx.proto
+method: mtx.MtxService.Transfer
+headers:
+body:
+  src_phone_number: +571234567890
+  dst_phone_number: +570123456789
+  amount:
+    amount: 5000000
+    currency: COP

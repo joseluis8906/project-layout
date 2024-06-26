@@ -1,0 +1,14 @@
+service: banking
+proto: tx.proto
+method: banking.TxService.InitTx
+headers:
+body:
+  src_bank:
+    name: itau
+    account: '1234567890'
+  dst_bank:
+    name: bbva
+    account: '0123456789'
+  amount:
+    amount: 2000000
+    currency: COP
