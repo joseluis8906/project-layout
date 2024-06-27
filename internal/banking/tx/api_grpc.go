@@ -36,7 +36,7 @@ type (
 func New(deps Deps) *Service {
 	txCh, err := deps.RabbitMQ.Channel()
 	if err != nil {
-		panic(fmt.Sprintf("creating amqp channel: %v", err))
+		panic(fmt.Sprintf("creating amqp tx channel: %v", err))
 	}
 	s := &Service{
 		log:      deps.Log,
@@ -47,7 +47,7 @@ func New(deps Deps) *Service {
 
 	rxCh, err := deps.RabbitMQ.Channel()
 	if err != nil {
-		panic(fmt.Sprintf("creating amqp channel: %v", err))
+		panic(fmt.Sprintf("creating amqp rx channel: %v", err))
 	}
 
 	msgs, err := rxCh.Consume("banking.init_txs", "", false, false, false, false, nil)
