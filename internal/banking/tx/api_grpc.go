@@ -26,10 +26,9 @@ type (
 
 	Service struct {
 		pb.UnimplementedTxServiceServer
-		log      *log.Logger
-		kafka    *kafka.Conn
-		rabbitmq *amqp.Channel
-		c        int
+		Log      *log.Logger
+		Kafka    *kafka.Conn
+		RabbitMQ *amqp.Channel
 	}
 )
 
@@ -39,10 +38,9 @@ func New(deps Deps) *Service {
 		panic(fmt.Sprintf("creating amqp tx channel: %v", err))
 	}
 	s := &Service{
-		log:      deps.Log,
-		kafka:    deps.Kafka,
-		rabbitmq: txCh,
-		c:        1,
+		Log:      deps.Log,
+		Kafka:    deps.Kafka,
+		RabbitMQ: txCh,
 	}
 
 	rxCh, err := deps.RabbitMQ.Channel()
@@ -76,13 +74,13 @@ func (s *Service) InitTx(ctx context.Context, req *pb.InitTxRequest) (*pb.InitTx
 		Amount:  req.Amount,
 	})
 	if err != nil {
-		s.log.Printf("marshaling task: %v", err)
+		s.Log.Printf("marshaling task: %v", err)
 		return nil, err
 	}
 
 	msg := amqp.Publishing{DeliveryMode: amqp.Persistent, Body: data}
-	if err := s.rabbitmq.PublishWithContext(tmCtx, "", "banking.init_txs", false, false, msg); err != nil {
-		s.log.Printf("publishing amqp message: %v", err)
+	if err := s.RabbitMQ.PublishWithContext(tmCtx, "", "banking.init_txs", false, false, msg); err != nil {
+		s.Log.Printf("publishing amqp message: %v", err)
 		return nil, err
 	}
 
@@ -93,22 +91,13 @@ func (s *Service) ProcessInitTx(d amqp.Delivery) {
 	var task pb.InitTxJob
 	err := proto.Unmarshal(d.Body, &task)
 	if err != nil {
-		s.log.Printf("umarshaling message: %v", err)
+		s.Log.Printf("umarshaling message: %v", err)
 		return
 	}
 
-	s.log.Printf(pkglog.Info("task arrived: %s"), task.Id)
-	time.Sleep(3 * time.Second)
-	if s.c < 3 {
-		s.log.Printf(pkglog.Info("task incompleted: %s"), task.Id)
-		d.Reject(true)
-		s.c++
-		return
-	}
-
-	s.log.Printf(pkglog.Info("task completed: %s"), task.Id)
+	s.Log.Printf(pkglog.Info("task completed: %s"), task.Id)
 	if err := d.Ack(false); err != nil {
-		s.log.Printf("acknowledging message: %v", err)
+		s.Log.Printf("acknowledging message: %v", err)
 		return
 	}
 }
