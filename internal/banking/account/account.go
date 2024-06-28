@@ -60,3 +60,17 @@ func (a *Account) Credit(amount money.Money) error {
 	a.Balance = v
 	return nil
 }
+
+func (a *Account) Debit(amount money.Money) error {
+	if a.Balance.Currency != amount.Currency {
+		return errors.New("different currencies")
+	}
+
+	v := a.Balance.Sub(amount)
+	a.Balance = v
+	return nil
+}
+
+func (a *Account) HasEnoughBalance(amount money.Money) bool {
+	return a.Balance.GtOrEq(amount)
+}

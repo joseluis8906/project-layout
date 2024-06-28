@@ -36,6 +36,32 @@ func (m Money) Add(a Money) Money {
 	return Money{money: n, Amount: n.Amount(), Currency: n.Currency().Code}
 }
 
+func (m Money) Sub(a Money) Money {
+	if m.money == nil {
+		m.money = money.New(m.Amount, m.Currency)
+	}
+
+	n, err := m.money.Subtract(money.New(a.Amount, a.Currency))
+	if err != nil {
+		return Money{}
+	}
+
+	return Money{money: n, Amount: n.Amount(), Currency: n.Currency().Code}
+}
+
+func (m Money) GtOrEq(a Money) bool {
+	if m.money == nil {
+		m.money = money.New(m.Amount, m.Currency)
+	}
+
+	ok, err := m.money.GreaterThanOrEqual(money.New(a.Amount, a.Currency))
+	if err != nil {
+		return false
+	}
+
+	return ok
+}
+
 func (m Money) String() string {
 	if m.money == nil {
 		return "$0"

@@ -28,10 +28,10 @@ type (
 
 	Service struct {
 		pb.UnimplementedAccountServiceServer
-		Log          *log.Logger
-		Kafka        *kafka.Conn
-		AccountAdder interface {
-			Add(context.Context, Account) error
+		Log              *log.Logger
+		Kafka            *kafka.Conn
+		AccountPersistor interface {
+			Persist(context.Context, Account) error
 		}
 		AccountGetter interface {
 			Get(context.Context, string, string) (Account, error)
@@ -42,10 +42,10 @@ type (
 func New(deps Deps) *Service {
 	accountRepo := NewAccountRepo(deps.Mongodb)
 	s := &Service{
-		Log:           deps.Log,
-		Kafka:         deps.Kafka,
-		AccountAdder:  accountRepo,
-		AccountGetter: accountRepo,
+		Log:              deps.Log,
+		Kafka:            deps.Kafka,
+		AccountPersistor: accountRepo,
+		AccountGetter:    accountRepo,
 	}
 
 	return s
@@ -68,7 +68,7 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 		return nil, fmt.Errorf("validating account owner: %w", err)
 	}
 
-	err := s.AccountAdder.Add(ctx, account)
+	err := s.AccountPersistor.Persist(ctx, account)
 	if err != nil {
 		log.Printf("adding account: %v", err)
 		return nil, fmt.Errorf("adding account: %w", err)
@@ -109,7 +109,7 @@ func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountReques
 		return nil, fmt.Errorf("crediting account: %w", err)
 	}
 
-	if err = s.AccountAdder.Add(ctx, account); err != nil {
+	if err = s.AccountPersistor.Persist(ctx, account); err != nil {
 		return nil, fmt.Errorf("updating account: %w", err)
 	}
 

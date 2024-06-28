@@ -28,7 +28,7 @@ func NewAccountRepo(conn *mongo.Client) *AccountRepo {
 	}
 }
 
-func (r *AccountRepo) Add(ctx context.Context, account Account) error {
+func (r *AccountRepo) Persist(ctx context.Context, account Account) error {
 	_, span := otel.Tracer("").Start(ctx, "banking.AccountRepository/Add")
 	defer span.End()
 

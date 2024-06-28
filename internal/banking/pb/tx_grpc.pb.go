@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	TxService_InitTx_FullMethodName = "/banking.TxService/InitTx"
+	TxService_InitTx_FullMethodName        = "/banking.TxService/InitTx"
+	TxService_CheckTxStatus_FullMethodName = "/banking.TxService/CheckTxStatus"
 )
 
 // TxServiceClient is the client API for TxService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TxServiceClient interface {
 	InitTx(ctx context.Context, in *InitTxRequest, opts ...grpc.CallOption) (*InitTxResponse, error)
+	CheckTxStatus(ctx context.Context, in *CheckTxStatusRequest, opts ...grpc.CallOption) (*CheckTxStatusResponse, error)
 }
 
 type txServiceClient struct {
@@ -46,11 +48,21 @@ func (c *txServiceClient) InitTx(ctx context.Context, in *InitTxRequest, opts ..
 	return out, nil
 }
 
+func (c *txServiceClient) CheckTxStatus(ctx context.Context, in *CheckTxStatusRequest, opts ...grpc.CallOption) (*CheckTxStatusResponse, error) {
+	out := new(CheckTxStatusResponse)
+	err := c.cc.Invoke(ctx, TxService_CheckTxStatus_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TxServiceServer is the server API for TxService service.
 // All implementations must embed UnimplementedTxServiceServer
 // for forward compatibility
 type TxServiceServer interface {
 	InitTx(context.Context, *InitTxRequest) (*InitTxResponse, error)
+	CheckTxStatus(context.Context, *CheckTxStatusRequest) (*CheckTxStatusResponse, error)
 	mustEmbedUnimplementedTxServiceServer()
 }
 
@@ -60,6 +72,9 @@ type UnimplementedTxServiceServer struct {
 
 func (UnimplementedTxServiceServer) InitTx(context.Context, *InitTxRequest) (*InitTxResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InitTx not implemented")
+}
+func (UnimplementedTxServiceServer) CheckTxStatus(context.Context, *CheckTxStatusRequest) (*CheckTxStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckTxStatus not implemented")
 }
 func (UnimplementedTxServiceServer) mustEmbedUnimplementedTxServiceServer() {}
 
@@ -92,6 +107,24 @@ func _TxService_InitTx_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TxService_CheckTxStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckTxStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TxServiceServer).CheckTxStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TxService_CheckTxStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TxServiceServer).CheckTxStatus(ctx, req.(*CheckTxStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TxService_ServiceDesc is the grpc.ServiceDesc for TxService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -102,6 +135,10 @@ var TxService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InitTx",
 			Handler:    _TxService_InitTx_Handler,
+		},
+		{
+			MethodName: "CheckTxStatus",
+			Handler:    _TxService_CheckTxStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

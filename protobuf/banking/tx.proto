@@ -7,6 +7,7 @@ option go_package = "github.com/joseluis8906/project-layout/internal/banking/pb"
 
 service TxService {
     rpc InitTx(InitTxRequest) returns (InitTxResponse);
+    rpc CheckTxStatus(CheckTxStatusRequest) returns (CheckTxStatusResponse);
 }
 
 message InitTxRequest {
@@ -27,6 +28,19 @@ message InitTxResponse {
 }
 
 message TxBank {
+    message Account {
+        string type = 1;
+        string number = 2;
+    }
+
     string name = 1;
-    string account = 2;
+    Account account = 2;
+}
+
+message CheckTxStatusRequest {
+    string tx_id = 1;
+}
+
+message CheckTxStatusResponse {
+    string status = 1;
 }

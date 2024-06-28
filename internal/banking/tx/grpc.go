@@ -6,9 +6,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/joseluis8906/project-layout/internal/banking/account"
 	"github.com/joseluis8906/project-layout/internal/banking/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
-	pkglog "github.com/joseluis8906/project-layout/pkg/log"
+	"github.com/joseluis8906/project-layout/pkg/money"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
@@ -21,14 +23,20 @@ type (
 		Log      *log.Logger
 		Kafka    *kafka.Conn
 		RabbitMQ *amqp.Connection
-		Mongodb  *mongo.Client
+		MongoDB  *mongo.Client
 	}
 
 	Service struct {
 		pb.UnimplementedTxServiceServer
-		Log      *log.Logger
-		Kafka    *kafka.Conn
-		RabbitMQ *amqp.Channel
+		Log         *log.Logger
+		Kafka       *kafka.Conn
+		RabbitMQ    *amqp.Channel
+		TxPersistor interface {
+			Persist(context.Context, Tx) error
+		}
+		TxGetter interface {
+			Get(context.Context, string) (Tx, error)
+		}
 	}
 )
 
@@ -54,8 +62,12 @@ func New(deps Deps) *Service {
 	}
 
 	go func() {
+		w := Worker{
+			Log: deps.Log,
+		}
+
 		for d := range msgs {
-			s.ProcessInitTx(d)
+			w.ProcessInitTx(d)
 		}
 	}()
 
@@ -67,6 +79,30 @@ func (s *Service) InitTx(ctx context.Context, req *pb.InitTxRequest) (*pb.InitTx
 	defer cancelFn()
 
 	txID := fmt.Sprintf("%d", time.Now().UnixMilli())
+	tx := Tx{
+		ID: txID,
+		SrcBank: Bank{
+			Name: req.SrcBank.Name,
+			Account: account.Account{
+				Type:   req.SrcBank.Account.Type,
+				Number: req.SrcBank.Account.Number,
+			},
+		},
+		DstBank: Bank{
+			Name: req.DstBank.Name,
+			Account: account.Account{
+				Type:   req.DstBank.Account.Type,
+				Number: req.DstBank.Account.Number,
+			},
+		},
+		Amount: money.New(req.Amount.Amount, req.Amount.Currency),
+		Status: "pending",
+	}
+	if err := s.TxPersistor.Persist(ctx, tx); err != nil {
+		s.Log.Printf("persisting tx: %v", err)
+		return nil, err
+	}
+
 	data, err := proto.Marshal(&pb.InitTxJob{
 		Id:      txID,
 		SrcBank: req.SrcBank,
@@ -87,17 +123,12 @@ func (s *Service) InitTx(ctx context.Context, req *pb.InitTxRequest) (*pb.InitTx
 	return &pb.InitTxResponse{TxId: txID}, nil
 }
 
-func (s *Service) ProcessInitTx(d amqp.Delivery) {
-	var task pb.InitTxJob
-	err := proto.Unmarshal(d.Body, &task)
+func (s *Service) CheckTxStatus(ctx context.Context, req *pb.CheckTxStatusRequest) (*pb.CheckTxStatusResponse, error) {
+	tx, err := s.TxGetter.Get(ctx, req.TxId)
 	if err != nil {
-		s.Log.Printf("umarshaling message: %v", err)
-		return
+		s.Log.Printf("getting tx from repository: %v", err)
+		return nil, err
 	}
 
-	s.Log.Printf(pkglog.Info("task completed: %s"), task.Id)
-	if err := d.Ack(false); err != nil {
-		s.Log.Printf("acknowledging message: %v", err)
-		return
-	}
+	return &pb.CheckTxStatusResponse{Status: tx.Status}, nil
 }
