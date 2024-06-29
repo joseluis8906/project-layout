@@ -1,6 +1,6 @@
 service: banking
 proto: tx.proto
-method: banking.TxService.InitTx
+method: banking.TxService.Transfer
 headers:
 body:
   src_bank:

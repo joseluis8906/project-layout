@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	TxService_InitTx_FullMethodName        = "/banking.TxService/InitTx"
+	TxService_Transfer_FullMethodName      = "/banking.TxService/Transfer"
 	TxService_CheckTxStatus_FullMethodName = "/banking.TxService/CheckTxStatus"
 )
 
@@ -27,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TxServiceClient interface {
-	InitTx(ctx context.Context, in *InitTxRequest, opts ...grpc.CallOption) (*InitTxResponse, error)
+	Transfer(ctx context.Context, in *TransferRequest, opts ...grpc.CallOption) (*TransferResponse, error)
 	CheckTxStatus(ctx context.Context, in *CheckTxStatusRequest, opts ...grpc.CallOption) (*CheckTxStatusResponse, error)
 }
 
@@ -39,9 +39,9 @@ func NewTxServiceClient(cc grpc.ClientConnInterface) TxServiceClient {
 	return &txServiceClient{cc}
 }
 
-func (c *txServiceClient) InitTx(ctx context.Context, in *InitTxRequest, opts ...grpc.CallOption) (*InitTxResponse, error) {
-	out := new(InitTxResponse)
-	err := c.cc.Invoke(ctx, TxService_InitTx_FullMethodName, in, out, opts...)
+func (c *txServiceClient) Transfer(ctx context.Context, in *TransferRequest, opts ...grpc.CallOption) (*TransferResponse, error) {
+	out := new(TransferResponse)
+	err := c.cc.Invoke(ctx, TxService_Transfer_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (c *txServiceClient) CheckTxStatus(ctx context.Context, in *CheckTxStatusRe
 // All implementations must embed UnimplementedTxServiceServer
 // for forward compatibility
 type TxServiceServer interface {
-	InitTx(context.Context, *InitTxRequest) (*InitTxResponse, error)
+	Transfer(context.Context, *TransferRequest) (*TransferResponse, error)
 	CheckTxStatus(context.Context, *CheckTxStatusRequest) (*CheckTxStatusResponse, error)
 	mustEmbedUnimplementedTxServiceServer()
 }
@@ -70,8 +70,8 @@ type TxServiceServer interface {
 type UnimplementedTxServiceServer struct {
 }
 
-func (UnimplementedTxServiceServer) InitTx(context.Context, *InitTxRequest) (*InitTxResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InitTx not implemented")
+func (UnimplementedTxServiceServer) Transfer(context.Context, *TransferRequest) (*TransferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Transfer not implemented")
 }
 func (UnimplementedTxServiceServer) CheckTxStatus(context.Context, *CheckTxStatusRequest) (*CheckTxStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckTxStatus not implemented")
@@ -89,20 +89,20 @@ func RegisterTxServiceServer(s grpc.ServiceRegistrar, srv TxServiceServer) {
 	s.RegisterService(&TxService_ServiceDesc, srv)
 }
 
-func _TxService_InitTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InitTxRequest)
+func _TxService_Transfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransferRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TxServiceServer).InitTx(ctx, in)
+		return srv.(TxServiceServer).Transfer(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TxService_InitTx_FullMethodName,
+		FullMethod: TxService_Transfer_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TxServiceServer).InitTx(ctx, req.(*InitTxRequest))
+		return srv.(TxServiceServer).Transfer(ctx, req.(*TransferRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -133,8 +133,8 @@ var TxService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TxServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "InitTx",
-			Handler:    _TxService_InitTx_Handler,
+			MethodName: "Transfer",
+			Handler:    _TxService_Transfer_Handler,
 		},
 		{
 			MethodName: "CheckTxStatus",

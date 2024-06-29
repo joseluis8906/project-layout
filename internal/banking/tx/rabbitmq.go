@@ -30,11 +30,11 @@ type (
 	}
 )
 
-func (s *Worker) ProcessInitTx(d amqp.Delivery) {
+func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	ctx, cancelFn := context.WithTimeout(context.Background(), 150*time.Millisecond)
 	defer cancelFn()
 
-	var task pb.InitTxJob
+	var task pb.TransferJob
 	err := proto.Unmarshal(d.Body, &task)
 	if err != nil {
 		s.Log.Printf("umarshaling message: %v", err)

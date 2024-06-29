@@ -34,7 +34,7 @@ type (
 			Persist(context.Context, Account) error
 		}
 		AccountGetter interface {
-			Get(context.Context, string, string) (Account, error)
+			Get(context.Context, string, string, string) (Account, error)
 		}
 	}
 )
@@ -53,9 +53,10 @@ func New(deps Deps) *Service {
 
 func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
 	account := Account{
-		Number:  fmt.Sprintf("%d", time.Now().Unix()),
+		Bank:    req.Bank,
 		Type:    req.Type,
-		Balance: money.New(0, req.Currency),
+		Number:  fmt.Sprintf("%d", time.Now().Unix()),
+		Balance: money.New(req.Balance.Amount, req.Balance.Currency),
 		Owner: Owner{
 			ID:       req.Owner.Id,
 			Email:    req.Owner.Email,
@@ -63,7 +64,7 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 			FullName: req.Owner.FullName,
 		},
 	}
-	if err := account.Validate(); err != nil {
+	if err := account.IsValid(); err != nil {
 		log.Printf("validating account: %v", err)
 		return nil, fmt.Errorf("validating account owner: %w", err)
 	}
@@ -95,7 +96,7 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 }
 
 func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountRequest) (*pb.CreditAccountResponse, error) {
-	account, err := s.AccountGetter.Get(ctx, req.Type, req.Number)
+	account, err := s.AccountGetter.Get(ctx, req.Bank, req.Type, req.Number)
 	if err != nil {
 		return nil, fmt.Errorf("getting account: %w", err)
 	}

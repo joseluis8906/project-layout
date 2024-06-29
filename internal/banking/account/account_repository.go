@@ -19,7 +19,7 @@ type (
 func NewAccountRepo(conn *mongo.Client) *AccountRepo {
 	db := conn.Database("banking").Collection("accounts")
 	db.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys:    bson.D{{Key: "type", Value: -1}, {Key: "number", Value: -1}},
+		Keys:    bson.D{{Key: "bank", Value: -1}, {Key: "type", Value: -1}, {Key: "number", Value: -1}},
 		Options: options.Index().SetUnique(true),
 	})
 
@@ -32,7 +32,11 @@ func (r *AccountRepo) Persist(ctx context.Context, account Account) error {
 	_, span := otel.Tracer("").Start(ctx, "banking.AccountRepository/Add")
 	defer span.End()
 
-	filter := bson.D{{Key: "type", Value: account.Type}, {Key: "number", Value: account.Number}}
+	filter := bson.D{
+		{Key: "bank", Value: account.Bank},
+		{Key: "type", Value: account.Type},
+		{Key: "number", Value: account.Number},
+	}
 	_, err := r.db.ReplaceOne(ctx, filter, account, options.Replace().SetUpsert(true))
 	if err != nil {
 		return fmt.Errorf("upserting account: %w", err)
@@ -41,14 +45,18 @@ func (r *AccountRepo) Persist(ctx context.Context, account Account) error {
 	return nil
 }
 
-func (r *AccountRepo) Get(ctx context.Context, aType string, number string) (Account, error) {
+func (r *AccountRepo) Get(ctx context.Context, bank, aType, number string) (Account, error) {
 	_, span := otel.Tracer("").Start(ctx, "banking.AccountRepository/Get")
 	defer span.End()
 
-	filter := bson.D{{Key: "type", Value: aType}, {Key: "number", Value: number}}
+	filter := bson.D{
+		{Key: "bank", Value: bank},
+		{Key: "type", Value: aType},
+		{Key: "number", Value: number},
+	}
 	cur := r.db.FindOne(ctx, filter)
 	if err := cur.Err(); err != nil {
-		return Account{}, fmt.Errorf("upserting account: %w", err)
+		return Account{}, fmt.Errorf("finding account: %w", err)
 	}
 
 	var account Account

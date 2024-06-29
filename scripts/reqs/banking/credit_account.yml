@@ -3,8 +3,9 @@ proto: account.proto
 method: banking.AccountService.CreditAccount
 headers:
 body:
+  bank: itau
   type: saving account
-  number: '1719018310'
+  number: '1719622067'
   amount:
-    amount: 1000000
-    currency: "COP"
+    amount: 100000
+    currency: COP

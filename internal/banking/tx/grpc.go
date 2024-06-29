@@ -56,7 +56,7 @@ func New(deps Deps) *Service {
 		panic(fmt.Sprintf("creating amqp rx channel: %v", err))
 	}
 
-	msgs, err := rxCh.Consume("banking.init_txs", "", false, false, false, false, nil)
+	msgs, err := rxCh.Consume("banking.transfers", "", false, false, false, false, nil)
 	if err != nil {
 		panic(fmt.Sprintf("consuming amqp messages: %v", err))
 	}
@@ -67,14 +67,14 @@ func New(deps Deps) *Service {
 		}
 
 		for d := range msgs {
-			w.ProcessInitTx(d)
+			w.ProcessTransfer(d)
 		}
 	}()
 
 	return s
 }
 
-func (s *Service) InitTx(ctx context.Context, req *pb.InitTxRequest) (*pb.InitTxResponse, error) {
+func (s *Service) Transfer(ctx context.Context, req *pb.TransferRequest) (*pb.TransferResponse, error) {
 	tmCtx, cancelFn := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancelFn()
 
@@ -103,7 +103,7 @@ func (s *Service) InitTx(ctx context.Context, req *pb.InitTxRequest) (*pb.InitTx
 		return nil, err
 	}
 
-	data, err := proto.Marshal(&pb.InitTxJob{
+	data, err := proto.Marshal(&pb.TransferJob{
 		Id:      txID,
 		SrcBank: req.SrcBank,
 		DstBank: req.DstBank,
@@ -115,12 +115,12 @@ func (s *Service) InitTx(ctx context.Context, req *pb.InitTxRequest) (*pb.InitTx
 	}
 
 	msg := amqp.Publishing{DeliveryMode: amqp.Persistent, Body: data}
-	if err := s.RabbitMQ.PublishWithContext(tmCtx, "", "banking.init_txs", false, false, msg); err != nil {
+	if err := s.RabbitMQ.PublishWithContext(tmCtx, "", "banking.transfers", false, false, msg); err != nil {
 		s.Log.Printf("publishing amqp message: %v", err)
 		return nil, err
 	}
 
-	return &pb.InitTxResponse{TxId: txID}, nil
+	return &pb.TransferResponse{TxId: txID}, nil
 }
 
 func (s *Service) CheckTxStatus(ctx context.Context, req *pb.CheckTxStatusRequest) (*pb.CheckTxStatusResponse, error) {

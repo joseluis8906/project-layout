@@ -14,6 +14,7 @@ func TestAccount_Validate(t *testing.T) {
 	}{
 		"valid": {
 			account: account.Account{
+				Type: "saving account",
 				Owner: account.Owner{
 					ID:       "123456789",
 					FullName: "John Doe",
@@ -25,33 +26,37 @@ func TestAccount_Validate(t *testing.T) {
 		},
 		"invalid id": {
 			account: account.Account{
+				Type: "saving account",
 				Owner: account.Owner{
 					ID: "a123456789",
 				},
 			},
-			want: errors.New("invalid id"),
+			want: errors.New("invalid owner id"),
 		},
 		"invalid email": {
 			account: account.Account{
+				Type: "saving account",
 				Owner: account.Owner{
 					ID:    "123456789",
 					Email: "jhon.doe@example",
 				},
 			},
-			want: errors.New("invalid email"),
+			want: errors.New("invalid owner email"),
 		},
 		"invalid name": {
 			account: account.Account{
+				Type: "saving account",
 				Owner: account.Owner{
 					ID:       "123456789",
 					Email:    "jhon.doe@example.com",
 					FullName: "J Doe",
 				},
 			},
-			want: errors.New("invalid name"),
+			want: errors.New("invalid owner name"),
 		},
 		"invalid country": {
 			account: account.Account{
+				Type: "saving account",
 				Owner: account.Owner{
 					ID:       "123456789",
 					FullName: "John Doe",
@@ -59,16 +64,16 @@ func TestAccount_Validate(t *testing.T) {
 					Country:  "US",
 				},
 			},
-			want: errors.New("invalid country"),
+			want: errors.New("invalid owner's country"),
 		},
 	}
 
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			err := tc.account.Validate()
+			err := tc.account.IsValid()
 			if err != nil && tc.want.Error() != err.Error() {
-				t.Errorf("account.Account.Validate() = %v, want %v", err, tc.want)
+				t.Errorf("account.Account.IsValid() = %v, want %v", err, tc.want)
 			}
 		})
 	}

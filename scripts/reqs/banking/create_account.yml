@@ -3,8 +3,11 @@ proto: account.proto
 method: banking.AccountService.CreateAccount
 headers:
 body:
+  bank: itau
   type: saving account
-  currency: COP
+  balance:
+    amount: 50000
+    currency: COP
   owner:
     id: '1234567890'
     country: CO
