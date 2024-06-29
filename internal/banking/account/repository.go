@@ -8,27 +8,33 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel"
+	"go.uber.org/fx"
 )
 
 type (
-	AccountRepo struct {
+	RepoDeps struct {
+		fx.In
+		Mongodb *mongo.Client
+	}
+
+	Repository struct {
 		db *mongo.Collection
 	}
 )
 
-func NewAccountRepo(conn *mongo.Client) *AccountRepo {
-	db := conn.Database("banking").Collection("accounts")
+func NewRepository(deps RepoDeps) *Repository {
+	db := deps.Mongodb.Database("banking").Collection("accounts")
 	db.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "bank", Value: -1}, {Key: "type", Value: -1}, {Key: "number", Value: -1}},
 		Options: options.Index().SetUnique(true),
 	})
 
-	return &AccountRepo{
+	return &Repository{
 		db: db,
 	}
 }
 
-func (r *AccountRepo) Persist(ctx context.Context, account Account) error {
+func (r *Repository) Persist(ctx context.Context, account Account) error {
 	_, span := otel.Tracer("").Start(ctx, "banking.AccountRepository/Add")
 	defer span.End()
 
@@ -45,7 +51,7 @@ func (r *AccountRepo) Persist(ctx context.Context, account Account) error {
 	return nil
 }
 
-func (r *AccountRepo) Get(ctx context.Context, bank, aType, number string) (Account, error) {
+func (r *Repository) Get(ctx context.Context, bank, aType, number string) (Account, error) {
 	_, span := otel.Tracer("").Start(ctx, "banking.AccountRepository/Get")
 	defer span.End()
 

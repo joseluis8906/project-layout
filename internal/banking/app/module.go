@@ -24,6 +24,13 @@ var Module = fx.Provide(
 	nats.New,
 	rabbitmq.New,
 
+	// repositories
+	account.NewRepository,
+	tx.NewRepository,
+
+	// workers
+	tx.NewWorker,
+
 	// services
 	account.New,
 	tx.New,

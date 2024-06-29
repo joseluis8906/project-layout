@@ -71,9 +71,9 @@ func TestAccount_Validate(t *testing.T) {
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			err := tc.account.IsValid()
+			err := tc.account.Validate()
 			if err != nil && tc.want.Error() != err.Error() {
-				t.Errorf("account.Account.IsValid() = %v, want %v", err, tc.want)
+				t.Errorf("account.Account.Validate() = %v, want %v", err, tc.want)
 			}
 		})
 	}

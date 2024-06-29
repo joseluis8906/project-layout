@@ -3,12 +3,14 @@ proto: tx.proto
 method: banking.TxService.Transfer
 headers:
 body:
-  src_bank:
-    name: itau
-    account: '1234567890'
-  dst_bank:
-    name: bbva
-    account: '0123456789'
   amount:
-    amount: 2000000
+    amount: 50000
     currency: COP
+  src_account:
+    bank: itau
+    type: saving account
+    number: '1719622067'
+  dst_account:
+    bank: itau
+    type: saving account
+    number: '1719625537'

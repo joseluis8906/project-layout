@@ -6,24 +6,23 @@ import (
 	"log"
 	"time"
 
-	"github.com/joseluis8906/project-layout/internal/banking/account"
 	"github.com/joseluis8906/project-layout/internal/banking/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	"github.com/joseluis8906/project-layout/pkg/money"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"google.golang.org/protobuf/proto"
 )
 
 type (
-	Deps struct {
+	SvcDeps struct {
 		fx.In
 		Log      *log.Logger
 		Kafka    *kafka.Conn
 		RabbitMQ *amqp.Connection
-		MongoDB  *mongo.Client
+		TxRepo   *Repository
+		Worker   *Worker
 	}
 
 	Service struct {
@@ -40,15 +39,17 @@ type (
 	}
 )
 
-func New(deps Deps) *Service {
+func New(deps SvcDeps) *Service {
 	txCh, err := deps.RabbitMQ.Channel()
 	if err != nil {
 		panic(fmt.Sprintf("creating amqp tx channel: %v", err))
 	}
 	s := &Service{
-		Log:      deps.Log,
-		Kafka:    deps.Kafka,
-		RabbitMQ: txCh,
+		Log:         deps.Log,
+		Kafka:       deps.Kafka,
+		RabbitMQ:    txCh,
+		TxPersistor: deps.TxRepo,
+		TxGetter:    deps.TxRepo,
 	}
 
 	rxCh, err := deps.RabbitMQ.Channel()
@@ -62,12 +63,8 @@ func New(deps Deps) *Service {
 	}
 
 	go func() {
-		w := Worker{
-			Log: deps.Log,
-		}
-
 		for d := range msgs {
-			w.ProcessTransfer(d)
+			deps.Worker.ProcessTransfer(d)
 		}
 	}()
 
@@ -80,34 +77,35 @@ func (s *Service) Transfer(ctx context.Context, req *pb.TransferRequest) (*pb.Tr
 
 	txID := fmt.Sprintf("%d", time.Now().UnixMilli())
 	tx := Tx{
-		ID: txID,
-		SrcBank: Bank{
-			Name: req.SrcBank.Name,
-			Account: account.Account{
-				Type:   req.SrcBank.Account.Type,
-				Number: req.SrcBank.Account.Number,
-			},
-		},
-		DstBank: Bank{
-			Name: req.DstBank.Name,
-			Account: account.Account{
-				Type:   req.DstBank.Account.Type,
-				Number: req.DstBank.Account.Number,
-			},
-		},
+		ID:     txID,
 		Amount: money.New(req.Amount.Amount, req.Amount.Currency),
+		SrcAccount: Account{
+			Bank:   req.SrcAccount.Bank,
+			Type:   req.SrcAccount.Type,
+			Number: req.SrcAccount.Number,
+		},
+		DstAccount: Account{
+			Bank:   req.DstAccount.Bank,
+			Type:   req.DstAccount.Type,
+			Number: req.DstAccount.Number,
+		},
 		Status: "pending",
 	}
+	if err := tx.Validate(); err != nil {
+		s.Log.Printf("validiting tx: %v", err)
+		return nil, err
+	}
+
 	if err := s.TxPersistor.Persist(ctx, tx); err != nil {
 		s.Log.Printf("persisting tx: %v", err)
 		return nil, err
 	}
 
 	data, err := proto.Marshal(&pb.TransferJob{
-		Id:      txID,
-		SrcBank: req.SrcBank,
-		DstBank: req.DstBank,
-		Amount:  req.Amount,
+		Id:         txID,
+		Amount:     req.Amount,
+		SrcAccount: req.SrcAccount,
+		DstAccount: req.DstAccount,
 	})
 	if err != nil {
 		s.Log.Printf("marshaling task: %v", err)

@@ -1,25 +1,38 @@
 package tx
 
 import (
-	"github.com/joseluis8906/project-layout/internal/banking/account"
+	"errors"
+
 	"github.com/joseluis8906/project-layout/pkg/money"
 )
 
 type (
 	Tx struct {
-		ID      string      `bson:"id"`
-		SrcBank Bank        `bson:"src_bank"`
-		DstBank Bank        `bson:"dst_bank"`
-		Amount  money.Money `bson:"amount"`
-		Status  string      `bson:"status"`
+		ID         string      `bson:"id"`
+		SrcAccount Account     `bson:"src_account"`
+		DstAccount Account     `bson:"dst_account"`
+		Amount     money.Money `bson:"amount"`
+		Status     string      `bson:"status"`
 	}
 
-	Bank struct {
-		Name    string          `bson:"name"`
-		Account account.Account `bson:"account"`
+	Account struct {
+		Bank   string `bson:"bank"`
+		Type   string `bson:"type"`
+		Number string `bson:"number"`
 	}
 )
 
 func (t Tx) IsZero() bool {
 	return t.ID == ""
+}
+
+func (t Tx) Validate() error {
+	sameAccount := t.SrcAccount.Bank == t.DstAccount.Bank &&
+		t.SrcAccount.Type == t.DstAccount.Type &&
+		t.SrcAccount.Number == t.DstAccount.Number
+	if sameAccount {
+		return errors.New("src and dst account are the same")
+	}
+
+	return nil
 }

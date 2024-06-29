@@ -11,7 +11,6 @@ import (
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	"github.com/joseluis8906/project-layout/pkg/money"
 	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/google/uuid"
 	"go.uber.org/fx"
@@ -19,11 +18,11 @@ import (
 )
 
 type (
-	Deps struct {
+	SvcDeps struct {
 		fx.In
-		Log     *log.Logger
-		Kafka   *kafka.Conn
-		Mongodb *mongo.Client
+		Log         *log.Logger
+		Kafka       *kafka.Conn
+		AccountRepo *Repository
 	}
 
 	Service struct {
@@ -39,13 +38,12 @@ type (
 	}
 )
 
-func New(deps Deps) *Service {
-	accountRepo := NewAccountRepo(deps.Mongodb)
+func New(deps SvcDeps) *Service {
 	s := &Service{
 		Log:              deps.Log,
 		Kafka:            deps.Kafka,
-		AccountPersistor: accountRepo,
-		AccountGetter:    accountRepo,
+		AccountPersistor: deps.AccountRepo,
+		AccountGetter:    deps.AccountRepo,
 	}
 
 	return s
@@ -64,7 +62,7 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 			FullName: req.Owner.FullName,
 		},
 	}
-	if err := account.IsValid(); err != nil {
+	if err := account.Validate(); err != nil {
 		log.Printf("validating account: %v", err)
 		return nil, fmt.Errorf("validating account owner: %w", err)
 	}

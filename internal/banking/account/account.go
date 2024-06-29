@@ -24,7 +24,7 @@ type (
 	}
 )
 
-func (a Account) IsValid() error {
+func (a Account) Validate() error {
 	validID := regexp.MustCompile(`^[0-9]+$`)
 	validEmail := regexp.MustCompile(`^[\w]+.*@[\w]+.(com|net|org)`)
 	validName := regexp.MustCompile(`^[\w]{2,} [\w]{2,}$`)
