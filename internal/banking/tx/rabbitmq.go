@@ -5,12 +5,15 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/joseluis8906/project-layout/internal/banking/account"
 	"github.com/joseluis8906/project-layout/internal/banking/pb"
-	"go.opentelemetry.io/otel"
-	"go.uber.org/fx"
+	"github.com/joseluis8906/project-layout/pkg/kafka"
+	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"go.opentelemetry.io/otel"
+	"go.uber.org/fx"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 )
@@ -18,12 +21,15 @@ import (
 type (
 	WkrDeps struct {
 		fx.In
+		Log         *log.Logger
+		Kafka       *kafka.Conn
 		TxRepo      *Repository
 		AccountRepo *account.Repository
 	}
 
 	Worker struct {
 		Log         *log.Logger
+		Kafka       *kafka.Conn
 		TxPersistor interface {
 			Persist(context.Context, Tx) error
 		}
@@ -41,6 +47,8 @@ type (
 
 func NewWorker(deps WkrDeps) *Worker {
 	return &Worker{
+		Log:              deps.Log,
+		Kafka:            deps.Kafka,
 		TxGetter:         deps.TxRepo,
 		TxPersistor:      deps.TxRepo,
 		AccountGetter:    deps.AccountRepo,
@@ -152,5 +160,34 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	if err := d.Ack(false); err != nil {
 		s.Log.Printf("acknowledging message: %v", err)
 		return
+	}
+
+	evt, err := proto.Marshal(&pkgpb.V1_TransferCompleted{
+		Id:         uuid.New().String(),
+		OccurredOn: time.Now().UnixMilli(),
+		Attributes: &pkgpb.V1_TransferCompleted_Attributes{
+			SrcAccount: &pkgpb.V1_TransferCompleted_Account{
+				Bank:   srcAccount.Bank,
+				Type:   srcAccount.Type,
+				Number: srcAccount.Number,
+			},
+			DstAccount: &pkgpb.V1_TransferCompleted_Account{
+				Bank:   dstAccount.Bank,
+				Type:   dstAccount.Type,
+				Number: dstAccount.Number,
+			},
+			Amount: &pkgpb.Money{
+				Amount:   tx.Amount.Amount,
+				Currency: tx.Amount.Currency,
+			},
+		},
+	})
+	if err != nil {
+		s.Log.Printf("marshaling event: %v", err)
+	}
+
+	err = s.Kafka.Publish("v1.transfer_completed", evt)
+	if err != nil {
+		s.Log.Printf("publishing event: %v", err)
 	}
 }

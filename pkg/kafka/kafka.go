@@ -94,14 +94,6 @@ func (c *Conn) Publish(topic string, msg []byte) error {
 	}, nil)
 }
 
-func (c *Conn) Enqueue(topic string, key string, msg []byte) {
-	c.producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Key:            []byte(key),
-		Value:          msg,
-	}, nil)
-}
-
 func (c *Conn) close() {
 	c.producer.Flush(15 * 1000)
 	c.producer.Close()

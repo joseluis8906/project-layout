@@ -9,6 +9,7 @@ import (
 	"github.com/joseluis8906/project-layout/internal/banking/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	"github.com/joseluis8906/project-layout/pkg/money"
+	"github.com/joseluis8906/project-layout/pkg/rabbitmq"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/fx"
@@ -20,7 +21,7 @@ type (
 		fx.In
 		Log      *log.Logger
 		Kafka    *kafka.Conn
-		RabbitMQ *amqp.Connection
+		RabbitMQ *rabbitmq.Conn
 		TxRepo   *Repository
 		Worker   *Worker
 	}
@@ -39,10 +40,14 @@ type (
 	}
 )
 
+const (
+	transfersQueue = "banking.transfers"
+)
+
 func New(deps SvcDeps) *Service {
 	txCh, err := deps.RabbitMQ.Channel()
 	if err != nil {
-		panic(fmt.Sprintf("creating amqp tx channel: %v", err))
+		deps.Log.Fatalf("creating amqp tx channel: %v", err)
 	}
 	s := &Service{
 		Log:         deps.Log,
@@ -52,22 +57,7 @@ func New(deps SvcDeps) *Service {
 		TxGetter:    deps.TxRepo,
 	}
 
-	rxCh, err := deps.RabbitMQ.Channel()
-	if err != nil {
-		panic(fmt.Sprintf("creating amqp rx channel: %v", err))
-	}
-
-	msgs, err := rxCh.Consume("banking.transfers", "", false, false, false, false, nil)
-	if err != nil {
-		panic(fmt.Sprintf("consuming amqp messages: %v", err))
-	}
-
-	go func() {
-		for d := range msgs {
-			deps.Worker.ProcessTransfer(d)
-		}
-	}()
-
+	deps.RabbitMQ.Subscribe(transfersQueue, deps.Worker.ProcessTransfer)
 	return s
 }
 
@@ -113,7 +103,7 @@ func (s *Service) Transfer(ctx context.Context, req *pb.TransferRequest) (*pb.Tr
 	}
 
 	msg := amqp.Publishing{DeliveryMode: amqp.Persistent, Body: data}
-	if err := s.RabbitMQ.PublishWithContext(tmCtx, "", "banking.transfers", false, false, msg); err != nil {
+	if err := s.RabbitMQ.PublishWithContext(tmCtx, "", transfersQueue, false, false, msg); err != nil {
 		s.Log.Printf("publishing amqp message: %v", err)
 		return nil, err
 	}
