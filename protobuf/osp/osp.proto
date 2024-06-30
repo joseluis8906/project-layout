@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package osp;
+
+option go_package = "github.com/joseluis8906/project-layout/internal/osp/pb";
+
+service OspService {
+    rpc Tx(TxRequest) returns (TxResponse);
+}
+
+message TxRequest {}
+
+message TxResponse {}

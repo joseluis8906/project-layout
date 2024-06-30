@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package mtx;
+
+option go_package = "github.com/joseluis8906/project-layout/internal/mtx/pb";
+
+service MtxService {
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    rpc PutMoney(PutMoneyRequest) returns (PutMoneyResponse);
+    rpc SendMoney(SendMoneyRequest) returns (SendMoneyResponse);
+    rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
+    rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+}
+
+message RegisterRequest {
+    string phone_number = 1;
+    string email = 2;
+    string full_name = 3;
+}
+
+message RegisterResponse {
+    string msg = 1;
+}
+
+message PutMoneyRequest {}
+
+message PutMoneyResponse {}
+
+message SendMoneyRequest {}
+
+message SendMoneyResponse {}
+
+message WithdrawRequest {}
+
+message WithdrawResponse {}
+
+message GetBalanceRequest {}
+
+message GetBalanceResponse {}

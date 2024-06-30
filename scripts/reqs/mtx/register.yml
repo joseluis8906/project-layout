@@ -1,0 +1,8 @@
+service: mtx 
+proto: mtx.proto
+method: mtx.MtxService.Register
+headers:
+body:
+  phone_number: +571234567890
+  email: john.doe@example.com
+  full_name: John Doe

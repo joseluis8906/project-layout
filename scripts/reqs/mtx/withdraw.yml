@@ -7,6 +7,3 @@ body:
   amount:
     amount: 5000000
     currency: COP
-  bank:
-    name: itau
-    account: 1234567890

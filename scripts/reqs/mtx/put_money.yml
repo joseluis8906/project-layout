@@ -9,4 +9,5 @@ body:
     currency: COP
   bank:
     name: itau
+    type: saving account
     account: 1234567890
