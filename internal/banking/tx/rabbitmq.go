@@ -45,6 +45,10 @@ type (
 	}
 )
 
+const (
+	transferCompletedTopic = "banking.v1.transfer_completed"
+)
+
 func NewWorker(deps WkrDeps) *Worker {
 	return &Worker{
 		Log:              deps.Log,
@@ -162,16 +166,16 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 		return
 	}
 
-	evt, err := proto.Marshal(&pkgpb.V1_TransferCompleted{
+	evt, err := proto.Marshal(&pb.Events_V1_TransferCompleted{
 		Id:         uuid.New().String(),
 		OccurredOn: time.Now().UnixMilli(),
-		Attributes: &pkgpb.V1_TransferCompleted_Attributes{
-			SrcAccount: &pkgpb.V1_TransferCompleted_Account{
+		Attributes: &pb.Events_V1_TransferCompleted_Attributes{
+			SrcAccount: &pb.Events_V1_TransferCompleted_Account{
 				Bank:   srcAccount.Bank,
 				Type:   srcAccount.Type,
 				Number: srcAccount.Number,
 			},
-			DstAccount: &pkgpb.V1_TransferCompleted_Account{
+			DstAccount: &pb.Events_V1_TransferCompleted_Account{
 				Bank:   dstAccount.Bank,
 				Type:   dstAccount.Type,
 				Number: dstAccount.Number,
@@ -186,7 +190,7 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 		s.Log.Printf("marshaling event: %v", err)
 	}
 
-	err = s.Kafka.Publish("v1.transfer_completed", evt)
+	err = s.Kafka.Publish(transferCompletedTopic, evt)
 	if err != nil {
 		s.Log.Printf("publishing event: %v", err)
 	}

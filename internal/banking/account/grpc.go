@@ -10,7 +10,6 @@ import (
 	"github.com/joseluis8906/project-layout/internal/banking/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	"github.com/joseluis8906/project-layout/pkg/money"
-	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
 
 	"github.com/google/uuid"
 	"go.uber.org/fx"
@@ -36,6 +35,11 @@ type (
 			Get(context.Context, string, string, string) (Account, error)
 		}
 	}
+)
+
+const (
+	accountCreatedTopic  = "banking.v1.account_created"
+	accountCreditedTopic = "banking.v1.account_credited"
 )
 
 func New(deps SvcDeps) *Service {
@@ -73,10 +77,11 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 		return nil, fmt.Errorf("adding account: %w", err)
 	}
 
-	evt, err := proto.Marshal(&pkgpb.V1_AccountCreated{
+	evt, err := proto.Marshal(&pb.Events_V1_AccountCreated{
 		Id:         uuid.New().String(),
 		OccurredOn: time.Now().UnixMilli(),
-		Attributes: &pkgpb.V1_AccountCreated_Attributes{
+		Attributes: &pb.Events_V1_AccountCreated_Attributes{
+			Bank:   account.Bank,
 			Type:   account.Type,
 			Number: account.Number,
 		},
@@ -85,7 +90,7 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 		s.Log.Printf("marshaling event: %v", err)
 	}
 
-	err = s.Kafka.Publish("v1.account_created", evt)
+	err = s.Kafka.Publish(accountCreatedTopic, evt)
 	if err != nil {
 		s.Log.Printf("publishing event: %v", err)
 	}
@@ -112,10 +117,11 @@ func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountReques
 		return nil, fmt.Errorf("updating account: %w", err)
 	}
 
-	evt, err := proto.Marshal(&pkgpb.V1_AccountCredited{
+	evt, err := proto.Marshal(&pb.Events_V1_AccountCredited{
 		Id:         uuid.New().String(),
 		OccurredOn: time.Now().UnixMilli(),
-		Attributes: &pkgpb.V1_AccountCredited_Attributes{
+		Attributes: &pb.Events_V1_AccountCredited_Attributes{
+			Bank:   account.Bank,
 			Type:   account.Type,
 			Number: account.Number,
 			Amount: fmt.Sprintf("%s", amount),
@@ -125,7 +131,7 @@ func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountReques
 		s.Log.Printf("marshaling event: %v", err)
 	}
 
-	if err := s.Kafka.Publish("v1.account_credited", evt); err != nil {
+	if err := s.Kafka.Publish(accountCreditedTopic, evt); err != nil {
 		s.Log.Printf("publishing event: %v", err)
 	}
 

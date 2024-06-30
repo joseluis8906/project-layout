@@ -28,4 +28,23 @@ message HelloWorldResponse {
 }
 EOF
 
+cat << EOF > $DIRECTORY/events_v1.proto
+syntax = "proto3";
+
+package $SRV_NAME;
+
+option go_package = "$PROJECT_NAME/internal/$SRV_NAME/pb";
+
+message Events_V1 {
+    message Tested {
+        message Attributes {
+            string msg = 1;
+        }
+        string id = 1;
+        uint64 occurred_on = 2;
+        Attributes attributes = 3;
+    }
+}
+EOF
+
 exit 0

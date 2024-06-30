@@ -159,8 +159,7 @@ import (
 
 	"$PROJECT_NAME/internal/$SRV_NAME/pb"
 	"$PROJECT_NAME/pkg/kafka"
-	loglevel "$PROJECT_NAME/pkg/log"
-	evtpb "$PROJECT_NAME/pkg/pb"
+	pkglog "$PROJECT_NAME/pkg/log"
 
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
@@ -182,13 +181,17 @@ type (
     }
 )
 
+const (
+    v1TestedTopic = "$SRV_NAME.v1.tested"
+)
+
 func New(deps Deps) *Service {
 	s := &Service{
 		log:   deps.Log,
 		kafka: deps.Kafka,
 	}
 
-	deps.Kafka.Subscribe("v1.tested", s.OnTested)
+	deps.Kafka.Subscribe(v1TestedTopic, s.OnTested)
     return s
 }
 
@@ -196,21 +199,23 @@ func (s *Service) World(ctx context.Context, req *pb.HelloWorldRequest) (*pb.Hel
 	_, span := otel.Tracer("").Start(context.Background(), "$SRV_NAME.HelloService/World")
 	defer span.End()
 
-	evt, err := proto.Marshal(&evtpb.V1_Tested{
+	evt, err := proto.Marshal(&pb.Events_V1_Tested{
 		Id:         uuid.New().String(),
 		OccurredOn: time.Now().UnixMilli(),
-        Msg:        req.Msg,
+        Attributes: &pb.Events_V1_Tested_Attributes{
+            Msg:        req.Msg,
+        },
 	})
 	if err != nil {
 		s.log.Printf("marshaling event: %v", err)
 	}
 
-	err = s.kafka.Publish("v1.tested", evt)
+	err = s.kafka.Publish(v1TestedTopic, evt)
 	if err != nil {
 		s.log.Printf("publishing event: %v", err)
 	}
 
-    s.log.Println(loglevel.Info("hello world!"))
+    s.log.Println(pkglog.Info("hello world!"))
     return &pb.HelloWorldResponse{Msg: req.Msg}, nil
 }
 
@@ -218,14 +223,14 @@ func (s *Service) OnTested(msg *kafka.Message) {
 	_, span := otel.Tracer("").Start(context.Background(), "$SRV_NAME.HelloService/OnTested")
 	defer span.End()
 
-	var evt evtpb.V1_Tested
+	var evt pb.Events_V1_Tested
 	err := proto.Unmarshal(msg.Value, &evt)
 	if err != nil {
 		s.log.Printf("unmarshaling event: %v", err)
 		return
 	}
 
-	s.log.Printf(loglevel.Info(\`msg received: {"id": %s, "occurred_on": %s, "msg": %s}\`), evt.Id, time.UnixMilli(evt.OccurredOn), evt.Msg)
+	s.log.Printf(pkglog.Info(\`msg received: {"id": %s, "occurred_on": %s, "msg": %s}\`), evt.Id, time.UnixMilli(evt.OccurredOn), evt.Attributes.Msg)
 }
 EOF
 
