@@ -1,0 +1,253 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=yummies
+      - POSTGRES_PASSWORD=yummies
+      - POSTGRES_DB=yummies
+    restart: always
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - yummies
+
+  ferretdb:
+    image: ghcr.io/ferretdb/ferretdb
+    container_name: ferretdb
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      - FERRETDB_POSTGRESQL_URL=postgres://yummies:yummies@postgres:5432/yummies
+    networks:
+      - yummies
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    restart: always
+    networks:
+      - yummies
+    ports:
+      - 9090:9090
+    volumes:
+      - ~/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.18
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - elastic-data:/usr/share/elasticsearch/data
+    restart: always 
+    networks:
+      - yummies
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.18
+    container_name: kibana
+    restart: always
+    environment:
+      - SERVER_BASEPATH=/kibana
+      - SERVER_REWRITEBASEPATH=true
+    networks:
+      - yummies
+    volumes:
+      - kibana-data:/usr/share/kibana/data
+    labels:
+      caddy: yummies.local
+      caddy.handle_path: /kibana/*
+      caddy.handle_path.0_rewrite: "* /kibana{path}"
+      caddy.handle_path.1_reverse_proxy: "{{upstreams 5601}}"
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.56
+    container_name: jaeger
+    restart: always
+    networks:
+      - yummies
+    environment:
+      - QUERY_BASE_PATH=/jaeger
+    labels:
+      caddy: yummies.local
+      caddy.handle_path: /jaeger/*
+      caddy.handle_path.0_rewrite: "* /jaeger{path}"
+      caddy.handle_path.1_reverse_proxy: "{{upstreams 16686}}"
+    ports:
+      - 4317:4317
+
+  # otel-collector:
+  #   image: otel/opentelemetry-collector-contrib:0.99.0
+  #   container_name: otel-collector
+  #   restart: always
+  #   volumes:
+  #     - ~/otel-collector-config.yml:/etc/otelcol-contrib/config.yaml
+  #   networks:
+  #     - yummies
+  #   ports:
+  #     - 4317:4317
+  #     - 4318:4318
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: always
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - yummies
+    environment:
+      - GF_SERVER_DOMAIN=yummies.local
+      - GF_SERVER_ROOT_URL=https://yummies.local/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    labels:
+      caddy: yummies.local
+      caddy.handle_path: /grafana/*
+      caddy.handle_path.0_rewrite: "* /grafana{path}"
+      caddy.handle_path.1_reverse_proxy: "{{upstreams 3000}}"
+      caddy.@ws.0_header: Connection *Upgrade*
+      caddy.@ws.1_header: Upgrade websocket
+      caddy.0_reverse_proxy: "@ws {{upstreams 3000}}"
+      caddy.1_reverse_proxy: "/grafana/api/live/ws {{upstreams 3000}}"
+
+  fluentd:
+    build: ./fluentd
+    container_name: fluentd
+    restart: always
+    volumes:
+      - ~/fluent.conf:/fluentd/etc/fluent.conf:ro
+    networks:
+      - yummies
+    ports:
+      - 24224:24224
+      - 24224:24224/udp
+
+  # ejabberd:
+  #   image: ejabberd/ecs
+  #   container_name: ejabberd
+  #   # restart: always
+  #   networks:
+  #     - yummies
+
+  nats:
+    image: nats:linux
+    container_name: nats
+    restart: always
+    networks:
+      - yummies
+    ports:
+      - 4222:4222
+
+  etcd:
+    image: bitnami/etcd
+    container_name: etcd
+    restart: always
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCDCTL_API=2
+    networks:
+      - yummies
+    ports:
+      - 2379:2379
+      - 2380:2380
+
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy:ci-alpine
+    container_name: caddy
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      - CADDY_INGRESS_NETWORKS=yummies
+    networks:
+      - yummies
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - caddy-data:/data
+    restart: always
+
+  redis:
+    image: redis
+    container_name: redis
+    restart: always
+    networks:
+      - yummies
+    ports:
+      - 6379:6379
+
+  # ubuntu:
+  #   image: ubuntu
+  #   container_name: ubuntu
+  #   networks:
+  #     - yummies
+  #   command: sleep infinity
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.8
+    container_name: zookeeper
+    restart: always
+    ports:
+      - "2181:2181"
+    volumes:
+      - "zookeeper-data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - yummies
+
+  kafka:
+    image: docker.io/bitnami/kafka:3.3
+    container_name: kafka
+    restart: always
+    ports:
+      - "9093:9093"
+      - "9092:9092"
+    volumes:
+      - "kafka-data:/bitnami"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
+    networks:
+      - yummies
+
+  rabbitmq:
+    image: docker.io/rabbitmq:3.13.3-management-alpine
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    networks:
+      - yummies
+
+networks:
+  yummies:
+    external: true
+
+volumes:
+  postgres-data:
+    external: true
+  elastic-data:
+    external: true
+  kibana-data:
+    external: true
+  grafana-data:
+    external: true
+  caddy-data:
+    external: true
+  zookeeper-data:
+    external: true
+  kafka-data:
+    external: true
+  prometheus-data:
+    external: true
