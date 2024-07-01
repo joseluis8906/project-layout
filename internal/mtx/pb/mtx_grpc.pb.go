@@ -19,17 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	MtxService_Register_FullMethodName   = "/mtx.MtxService/Register"
-	MtxService_PutMoney_FullMethodName   = "/mtx.MtxService/PutMoney"
-	MtxService_SendMoney_FullMethodName  = "/mtx.MtxService/SendMoney"
-	MtxService_Withdraw_FullMethodName   = "/mtx.MtxService/Withdraw"
-	MtxService_GetBalance_FullMethodName = "/mtx.MtxService/GetBalance"
+	AccountService_Register_FullMethodName   = "/mtx.AccountService/Register"
+	AccountService_PutMoney_FullMethodName   = "/mtx.AccountService/PutMoney"
+	AccountService_SendMoney_FullMethodName  = "/mtx.AccountService/SendMoney"
+	AccountService_Withdraw_FullMethodName   = "/mtx.AccountService/Withdraw"
+	AccountService_GetBalance_FullMethodName = "/mtx.AccountService/GetBalance"
 )
 
-// MtxServiceClient is the client API for MtxService service.
+// AccountServiceClient is the client API for AccountService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type MtxServiceClient interface {
+type AccountServiceClient interface {
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	PutMoney(ctx context.Context, in *PutMoneyRequest, opts ...grpc.CallOption) (*PutMoneyResponse, error)
 	SendMoney(ctx context.Context, in *SendMoneyRequest, opts ...grpc.CallOption) (*SendMoneyResponse, error)
@@ -37,219 +37,219 @@ type MtxServiceClient interface {
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error)
 }
 
-type mtxServiceClient struct {
+type accountServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewMtxServiceClient(cc grpc.ClientConnInterface) MtxServiceClient {
-	return &mtxServiceClient{cc}
+func NewAccountServiceClient(cc grpc.ClientConnInterface) AccountServiceClient {
+	return &accountServiceClient{cc}
 }
 
-func (c *mtxServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+func (c *accountServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
 	out := new(RegisterResponse)
-	err := c.cc.Invoke(ctx, MtxService_Register_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, AccountService_Register_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *mtxServiceClient) PutMoney(ctx context.Context, in *PutMoneyRequest, opts ...grpc.CallOption) (*PutMoneyResponse, error) {
+func (c *accountServiceClient) PutMoney(ctx context.Context, in *PutMoneyRequest, opts ...grpc.CallOption) (*PutMoneyResponse, error) {
 	out := new(PutMoneyResponse)
-	err := c.cc.Invoke(ctx, MtxService_PutMoney_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, AccountService_PutMoney_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *mtxServiceClient) SendMoney(ctx context.Context, in *SendMoneyRequest, opts ...grpc.CallOption) (*SendMoneyResponse, error) {
+func (c *accountServiceClient) SendMoney(ctx context.Context, in *SendMoneyRequest, opts ...grpc.CallOption) (*SendMoneyResponse, error) {
 	out := new(SendMoneyResponse)
-	err := c.cc.Invoke(ctx, MtxService_SendMoney_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, AccountService_SendMoney_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *mtxServiceClient) Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawResponse, error) {
+func (c *accountServiceClient) Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawResponse, error) {
 	out := new(WithdrawResponse)
-	err := c.cc.Invoke(ctx, MtxService_Withdraw_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, AccountService_Withdraw_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *mtxServiceClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error) {
+func (c *accountServiceClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error) {
 	out := new(GetBalanceResponse)
-	err := c.cc.Invoke(ctx, MtxService_GetBalance_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, AccountService_GetBalance_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// MtxServiceServer is the server API for MtxService service.
-// All implementations must embed UnimplementedMtxServiceServer
+// AccountServiceServer is the server API for AccountService service.
+// All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility
-type MtxServiceServer interface {
+type AccountServiceServer interface {
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	PutMoney(context.Context, *PutMoneyRequest) (*PutMoneyResponse, error)
 	SendMoney(context.Context, *SendMoneyRequest) (*SendMoneyResponse, error)
 	Withdraw(context.Context, *WithdrawRequest) (*WithdrawResponse, error)
 	GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error)
-	mustEmbedUnimplementedMtxServiceServer()
+	mustEmbedUnimplementedAccountServiceServer()
 }
 
-// UnimplementedMtxServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedMtxServiceServer struct {
+// UnimplementedAccountServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedAccountServiceServer struct {
 }
 
-func (UnimplementedMtxServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
+func (UnimplementedAccountServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedMtxServiceServer) PutMoney(context.Context, *PutMoneyRequest) (*PutMoneyResponse, error) {
+func (UnimplementedAccountServiceServer) PutMoney(context.Context, *PutMoneyRequest) (*PutMoneyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PutMoney not implemented")
 }
-func (UnimplementedMtxServiceServer) SendMoney(context.Context, *SendMoneyRequest) (*SendMoneyResponse, error) {
+func (UnimplementedAccountServiceServer) SendMoney(context.Context, *SendMoneyRequest) (*SendMoneyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendMoney not implemented")
 }
-func (UnimplementedMtxServiceServer) Withdraw(context.Context, *WithdrawRequest) (*WithdrawResponse, error) {
+func (UnimplementedAccountServiceServer) Withdraw(context.Context, *WithdrawRequest) (*WithdrawResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Withdraw not implemented")
 }
-func (UnimplementedMtxServiceServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error) {
+func (UnimplementedAccountServiceServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBalance not implemented")
 }
-func (UnimplementedMtxServiceServer) mustEmbedUnimplementedMtxServiceServer() {}
+func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 
-// UnsafeMtxServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to MtxServiceServer will
+// UnsafeAccountServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AccountServiceServer will
 // result in compilation errors.
-type UnsafeMtxServiceServer interface {
-	mustEmbedUnimplementedMtxServiceServer()
+type UnsafeAccountServiceServer interface {
+	mustEmbedUnimplementedAccountServiceServer()
 }
 
-func RegisterMtxServiceServer(s grpc.ServiceRegistrar, srv MtxServiceServer) {
-	s.RegisterService(&MtxService_ServiceDesc, srv)
+func RegisterAccountServiceServer(s grpc.ServiceRegistrar, srv AccountServiceServer) {
+	s.RegisterService(&AccountService_ServiceDesc, srv)
 }
 
-func _MtxService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AccountService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MtxServiceServer).Register(ctx, in)
+		return srv.(AccountServiceServer).Register(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MtxService_Register_FullMethodName,
+		FullMethod: AccountService_Register_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MtxServiceServer).Register(ctx, req.(*RegisterRequest))
+		return srv.(AccountServiceServer).Register(ctx, req.(*RegisterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MtxService_PutMoney_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AccountService_PutMoney_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PutMoneyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MtxServiceServer).PutMoney(ctx, in)
+		return srv.(AccountServiceServer).PutMoney(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MtxService_PutMoney_FullMethodName,
+		FullMethod: AccountService_PutMoney_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MtxServiceServer).PutMoney(ctx, req.(*PutMoneyRequest))
+		return srv.(AccountServiceServer).PutMoney(ctx, req.(*PutMoneyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MtxService_SendMoney_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AccountService_SendMoney_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendMoneyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MtxServiceServer).SendMoney(ctx, in)
+		return srv.(AccountServiceServer).SendMoney(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MtxService_SendMoney_FullMethodName,
+		FullMethod: AccountService_SendMoney_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MtxServiceServer).SendMoney(ctx, req.(*SendMoneyRequest))
+		return srv.(AccountServiceServer).SendMoney(ctx, req.(*SendMoneyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MtxService_Withdraw_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AccountService_Withdraw_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(WithdrawRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MtxServiceServer).Withdraw(ctx, in)
+		return srv.(AccountServiceServer).Withdraw(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MtxService_Withdraw_FullMethodName,
+		FullMethod: AccountService_Withdraw_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MtxServiceServer).Withdraw(ctx, req.(*WithdrawRequest))
+		return srv.(AccountServiceServer).Withdraw(ctx, req.(*WithdrawRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MtxService_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AccountService_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetBalanceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MtxServiceServer).GetBalance(ctx, in)
+		return srv.(AccountServiceServer).GetBalance(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MtxService_GetBalance_FullMethodName,
+		FullMethod: AccountService_GetBalance_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MtxServiceServer).GetBalance(ctx, req.(*GetBalanceRequest))
+		return srv.(AccountServiceServer).GetBalance(ctx, req.(*GetBalanceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// MtxService_ServiceDesc is the grpc.ServiceDesc for MtxService service.
+// AccountService_ServiceDesc is the grpc.ServiceDesc for AccountService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var MtxService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "mtx.MtxService",
-	HandlerType: (*MtxServiceServer)(nil),
+var AccountService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "mtx.AccountService",
+	HandlerType: (*AccountServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Register",
-			Handler:    _MtxService_Register_Handler,
+			Handler:    _AccountService_Register_Handler,
 		},
 		{
 			MethodName: "PutMoney",
-			Handler:    _MtxService_PutMoney_Handler,
+			Handler:    _AccountService_PutMoney_Handler,
 		},
 		{
 			MethodName: "SendMoney",
-			Handler:    _MtxService_SendMoney_Handler,
+			Handler:    _AccountService_SendMoney_Handler,
 		},
 		{
 			MethodName: "Withdraw",
-			Handler:    _MtxService_Withdraw_Handler,
+			Handler:    _AccountService_Withdraw_Handler,
 		},
 		{
 			MethodName: "GetBalance",
-			Handler:    _MtxService_GetBalance_Handler,
+			Handler:    _AccountService_GetBalance_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

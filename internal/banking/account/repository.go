@@ -35,7 +35,7 @@ func NewRepository(deps RepoDeps) *Repository {
 }
 
 func (r *Repository) Persist(ctx context.Context, account Account) error {
-	_, span := otel.Tracer("").Start(ctx, "banking.AccountRepository/Add")
+	_, span := otel.Tracer("").Start(ctx, "banking.AccountRepository/Persist")
 	defer span.End()
 
 	filter := bson.D{
@@ -45,7 +45,7 @@ func (r *Repository) Persist(ctx context.Context, account Account) error {
 	}
 	_, err := r.db.ReplaceOne(ctx, filter, account, options.Replace().SetUpsert(true))
 	if err != nil {
-		return fmt.Errorf("upserting account: %w", err)
+		return fmt.Errorf("replacing one account: %w", err)
 	}
 
 	return nil

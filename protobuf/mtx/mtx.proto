@@ -4,7 +4,7 @@ package mtx;
 
 option go_package = "github.com/joseluis8906/project-layout/internal/mtx/pb";
 
-service MtxService {
+service AccountService {
     rpc Register(RegisterRequest) returns (RegisterResponse);
     rpc PutMoney(PutMoneyRequest) returns (PutMoneyResponse);
     rpc SendMoney(SendMoneyRequest) returns (SendMoneyResponse);
@@ -13,14 +13,16 @@ service MtxService {
 }
 
 message RegisterRequest {
+    message Owner {
+        string id = 1;    
+        string email = 2;
+        string full_name = 3;
+    }
     string phone_number = 1;
-    string email = 2;
-    string full_name = 3;
+    Owner owner = 2;
 }
 
-message RegisterResponse {
-    string msg = 1;
-}
+message RegisterResponse {}
 
 message PutMoneyRequest {}
 
