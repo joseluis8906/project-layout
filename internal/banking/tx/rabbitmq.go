@@ -2,6 +2,7 @@ package tx
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -87,9 +88,8 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	g.Go(func() error {
 		a, err := s.AccountGetter.Get(ctx, tx.SrcAccount.Bank, tx.SrcAccount.Type, tx.SrcAccount.Number)
 		if err != nil {
-			s.Log.Printf("getting src account: %v", err)
 			d.Reject(true)
-			return err
+			return fmt.Errorf("getting src account: %w", err)
 		}
 		srcAccount = a
 		return nil
@@ -98,16 +98,15 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	g.Go(func() error {
 		a, err := s.AccountGetter.Get(ctx, tx.DstAccount.Bank, tx.DstAccount.Type, tx.DstAccount.Number)
 		if err != nil {
-			s.Log.Printf("getting dst account: %v", err)
 			d.Reject(true)
-			return err
+			return fmt.Errorf("getting dst account: %w", err)
 		}
 		dstAccount = a
 		return nil
 	})
 
 	if err = g.Wait(); err != nil {
-		s.Log.Printf("getting src and dst accounts: %v", err)
+		s.Log.Print(err)
 		d.Reject(true)
 		return
 	}
@@ -132,16 +131,14 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 
 	g.Go(func() error {
 		if err := s.AccountPersistor.Persist(ctx, srcAccount); err != nil {
-			s.Log.Printf("persisting src account: %v", err)
-			return err
+			return fmt.Errorf("persisting src account: %w", err)
 		}
 		return nil
 	})
 
 	g.Go(func() error {
 		if err := s.AccountPersistor.Persist(ctx, dstAccount); err != nil {
-			s.Log.Printf("persisting dst account: %v", err)
-			return err
+			return fmt.Errorf("persisting dst account: %w", err)
 		}
 		return nil
 	})
@@ -149,14 +146,13 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	g.Go(func() error {
 		tx.Status = "completed"
 		if err := s.TxPersistor.Persist(ctx, tx); err != nil {
-			s.Log.Printf("persisting tx: %v", err)
-			return err
+			return fmt.Errorf("persisting tx: %w", err)
 		}
 		return nil
 	})
 
 	if err = g.Wait(); err != nil {
-		s.Log.Printf("persisting src, dst account and tx")
+		s.Log.Print(err)
 		d.Reject(true)
 		return
 	}
