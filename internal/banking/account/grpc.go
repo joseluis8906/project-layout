@@ -26,14 +26,10 @@ type (
 
 	Service struct {
 		pb.UnimplementedAccountServiceServer
-		Log              *log.Logger
-		Kafka            *kafka.Conn
-		AccountPersistor interface {
-			Persist(context.Context, Account) error
-		}
-		AccountGetter interface {
-			Get(context.Context, string, string, string) (Account, error)
-		}
+		LogPrintf      func(format string, v ...any)
+		KafkaPublish   func(topic string, msg []byte) error
+		AccountPersist func(context.Context, Account) error
+		AccountGet     func(ctx context.Context, bank, atype, number string) (Account, error)
 	}
 )
 
@@ -44,17 +40,17 @@ const (
 
 func New(deps SvcDeps) *Service {
 	s := &Service{
-		Log:              deps.Log,
-		Kafka:            deps.Kafka,
-		AccountPersistor: deps.AccountRepo,
-		AccountGetter:    deps.AccountRepo,
+		LogPrintf:      deps.Log.Printf,
+		KafkaPublish:   deps.Kafka.Publish,
+		AccountPersist: deps.AccountRepo.Persist,
+		AccountGet:     deps.AccountRepo.Get,
 	}
 
 	return s
 }
 
 func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
-	account := Account{
+	newAccount := Account{
 		Bank:    req.Bank,
 		Type:    req.Type,
 		Number:  fmt.Sprintf("%d", time.Now().Unix()),
@@ -66,12 +62,12 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 			FullName: req.Owner.FullName,
 		},
 	}
-	if err := account.Validate(); err != nil {
+	if err := Validate(newAccount); err != nil {
 		log.Printf("validating account: %v", err)
 		return nil, fmt.Errorf("validating account owner: %w", err)
 	}
 
-	err := s.AccountPersistor.Persist(ctx, account)
+	err := s.AccountPersist(ctx, newAccount)
 	if err != nil {
 		log.Printf("adding account: %v", err)
 		return nil, fmt.Errorf("adding account: %w", err)
@@ -81,25 +77,25 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 		Id:         uuid.New().String(),
 		OccurredOn: time.Now().UnixMilli(),
 		Attributes: &pb.Events_V1_AccountCreated_Attributes{
-			Bank:   account.Bank,
-			Type:   account.Type,
-			Number: account.Number,
+			Bank:   newAccount.Bank,
+			Type:   newAccount.Type,
+			Number: newAccount.Number,
 		},
 	})
 	if err != nil {
-		s.Log.Printf("marshaling event: %v", err)
+		s.LogPrintf("marshaling event: %v", err)
 	}
 
-	err = s.Kafka.Publish(accountCreatedTopic, evt)
+	err = s.KafkaPublish(accountCreatedTopic, evt)
 	if err != nil {
-		s.Log.Printf("publishing event: %v", err)
+		s.LogPrintf("publishing event: %v", err)
 	}
 
-	return &pb.CreateAccountResponse{Number: account.Number}, nil
+	return &pb.CreateAccountResponse{Number: newAccount.Number}, nil
 }
 
 func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountRequest) (*pb.CreditAccountResponse, error) {
-	account, err := s.AccountGetter.Get(ctx, req.Bank, req.Type, req.Number)
+	account, err := s.AccountGet(ctx, req.Bank, req.Type, req.Number)
 	if err != nil {
 		return nil, fmt.Errorf("getting account: %w", err)
 	}
@@ -109,11 +105,11 @@ func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountReques
 	}
 
 	amount := money.New(req.Amount.Amount, req.Amount.Currency)
-	if err := account.Credit(amount); err != nil {
+	if err := Credit(&account, amount); err != nil {
 		return nil, fmt.Errorf("crediting account: %w", err)
 	}
 
-	if err = s.AccountPersistor.Persist(ctx, account); err != nil {
+	if err = s.AccountPersist(ctx, account); err != nil {
 		return nil, fmt.Errorf("updating account: %w", err)
 	}
 
@@ -128,11 +124,11 @@ func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountReques
 		},
 	})
 	if err != nil {
-		s.Log.Printf("marshaling event: %v", err)
+		s.LogPrintf("marshaling event: %v", err)
 	}
 
-	if err := s.Kafka.Publish(accountCreditedTopic, evt); err != nil {
-		s.Log.Printf("publishing event: %v", err)
+	if err := s.KafkaPublish(accountCreditedTopic, evt); err != nil {
+		s.LogPrintf("publishing event: %v", err)
 	}
 
 	return &pb.CreditAccountResponse{}, nil

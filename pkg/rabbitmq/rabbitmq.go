@@ -7,6 +7,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
+	"golang.org/x/net/context"
 )
 
 type (
@@ -54,4 +55,13 @@ func (c *Conn) Subscribe(queue string, consumer consumerFunc) error {
 	}()
 
 	return nil
+}
+
+func (c *Conn) Publish(ctx context.Context, exchange, key string, mandatory, inmediate bool, msg amqp.Publishing) error {
+	ch, err := c.conn.Channel()
+	if err != nil {
+		return err
+	}
+	defer ch.Close()
+	return ch.PublishWithContext(ctx, exchange, key, mandatory, inmediate, msg)
 }

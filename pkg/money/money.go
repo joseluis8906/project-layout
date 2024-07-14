@@ -23,49 +23,49 @@ func (m Money) IsZero() bool {
 	return m.Currency == ""
 }
 
-func (m Money) Add(a Money) Money {
-	if m.money == nil {
-		m.money = money.New(m.Amount, m.Currency)
-	}
-
-	n, err := m.money.Add(money.New(a.Amount, a.Currency))
-	if err != nil {
-		return Money{}
-	}
-
-	return Money{money: n, Amount: n.Amount(), Currency: n.Currency().Code}
-}
-
-func (m Money) Sub(a Money) Money {
-	if m.money == nil {
-		m.money = money.New(m.Amount, m.Currency)
-	}
-
-	n, err := m.money.Subtract(money.New(a.Amount, a.Currency))
-	if err != nil {
-		return Money{}
-	}
-
-	return Money{money: n, Amount: n.Amount(), Currency: n.Currency().Code}
-}
-
-func (m Money) GtOrEq(a Money) bool {
-	if m.money == nil {
-		m.money = money.New(m.Amount, m.Currency)
-	}
-
-	ok, err := m.money.GreaterThanOrEqual(money.New(a.Amount, a.Currency))
-	if err != nil {
-		return false
-	}
-
-	return ok
-}
-
 func (m Money) String() string {
 	if m.money == nil {
 		return "$0"
 	}
 
 	return m.money.Display()
+}
+
+func Add(addendr, addendl Money) Money {
+	if addendr.money == nil {
+		addendr.money = money.New(addendr.Amount, addendr.Currency)
+	}
+
+	n, err := addendr.money.Add(money.New(addendl.Amount, addendl.Currency))
+	if err != nil {
+		return Money{}
+	}
+
+	return Money{money: n, Amount: n.Amount(), Currency: n.Currency().Code}
+}
+
+func Sub(minued, subtrahend Money) Money {
+	if minued.money == nil {
+		minued.money = money.New(minued.Amount, minued.Currency)
+	}
+
+	res, err := minued.money.Subtract(money.New(subtrahend.Amount, subtrahend.Currency))
+	if err != nil {
+		return Money{}
+	}
+
+	return Money{money: res, Amount: res.Amount(), Currency: res.Currency().Code}
+}
+
+func GtOrEq(left, right Money) bool {
+	if left.money == nil {
+		left.money = money.New(left.Amount, left.Currency)
+	}
+
+	ok, err := left.money.GreaterThanOrEqual(money.New(right.Amount, right.Currency))
+	if err != nil {
+		return false
+	}
+
+	return ok
 }

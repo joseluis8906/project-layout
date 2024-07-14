@@ -11,7 +11,6 @@ import (
 	"github.com/joseluis8906/project-layout/pkg/money"
 	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
 
-	// "github.com/google/uuid"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 	"google.golang.org/protobuf/proto"
@@ -27,19 +26,15 @@ type (
 
 	Service struct {
 		pb.UnimplementedAccountServiceServer
-		log              *log.Logger
-		kafka            *kafka.Conn
-		AccountPersistor interface {
-			Persist(context.Context, Account) error
-		}
+		LogPrintf      func(format string, v ...any)
+		AccountPersist func(context.Context, Account) error
 	}
 )
 
 func New(deps Deps) *Service {
 	s := &Service{
-		log:              deps.Log,
-		kafka:            deps.Kafka,
-		AccountPersistor: deps.AccountRepo,
+		LogPrintf:      deps.Log.Printf,
+		AccountPersist: deps.AccountRepo.Persist,
 	}
 
 	deps.Kafka.Subscribe("v1.tested", s.OnTested)
@@ -47,7 +42,7 @@ func New(deps Deps) *Service {
 }
 
 func (s *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	a := Account{
+	newAccount := Account{
 		PhoneNumber: req.PhoneNumber,
 		Balance:     money.New(0, money.COP),
 		Owner: Owner{
@@ -56,13 +51,13 @@ func (s *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Re
 			FullName: req.Owner.FullName,
 		},
 	}
-	if err := a.Validate(); err != nil {
-		s.log.Printf("validating account: %v", err)
+	if err := Validate(newAccount); err != nil {
+		s.LogPrintf("validating account: %v", err)
 		return nil, err
 	}
 
-	if err := s.AccountPersistor.Persist(ctx, a); err != nil {
-		s.log.Printf("persisting account: %v", err)
+	if err := s.AccountPersist(ctx, newAccount); err != nil {
+		s.LogPrintf("persisting account: %v", err)
 		return nil, err
 	}
 
@@ -76,9 +71,9 @@ func (s *Service) OnTested(msg *kafka.Message) {
 	var evt pkgpb.V1_Tested
 	err := proto.Unmarshal(msg.Value, &evt)
 	if err != nil {
-		s.log.Printf("unmarshaling event: %v", err)
+		s.LogPrintf("unmarshaling event: %v", err)
 		return
 	}
 
-	s.log.Printf(pkglog.Info(`msg received: {"id": %s, "occurred_on": %s, "msg": %s}`), evt.Id, time.UnixMilli(evt.OccurredOn), evt.Msg)
+	s.LogPrintf(pkglog.Info(`msg received: {"id": %s, "occurred_on": %s, "msg": %s}`), evt.Id, time.UnixMilli(evt.OccurredOn), evt.Msg)
 }

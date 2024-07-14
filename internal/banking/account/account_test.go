@@ -7,7 +7,7 @@ import (
 	"github.com/joseluis8906/project-layout/internal/banking/account"
 )
 
-func TestAccount_Validate(t *testing.T) {
+func TestValidate(t *testing.T) {
 	testCases := map[string]struct {
 		account account.Account
 		want    error
@@ -71,9 +71,9 @@ func TestAccount_Validate(t *testing.T) {
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			err := tc.account.Validate()
+			err := account.Validate(tc.account)
 			if err != nil && tc.want.Error() != err.Error() {
-				t.Errorf("account.Account.Validate() = %v, want %v", err, tc.want)
+				t.Errorf("account.Validate(%v) = %v, want %v", tc.account, err, tc.want)
 			}
 		})
 	}

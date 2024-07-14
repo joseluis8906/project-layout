@@ -29,13 +29,12 @@ type (
 )
 
 var (
-	reLevel   *regexp.Regexp
+	re        *regexp.Regexp
 	reNoLevel *regexp.Regexp
 )
 
 func init() {
-	reLevel = regexp.MustCompile(`^(?P<app>\w+) (?P<date>[0-9]{4}\/[0-9]{2}\/[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}) (?P<line>\/[\w+-\/]+\.\w+:[0-9]+): (?P<level>INFO|ERROR) (?P<msg>.*)\n$`)
-	reNoLevel = regexp.MustCompile(`^(?P<app>\w+) (?P<date>[0-9]{4}\/[0-9]{2}\/[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}) (?P<line>\/[\w+-\/]+\.\w+:[0-9]+): (?P<msg>.*)\n$`)
+	re = regexp.MustCompile(`^(?P<app>\w+) (?P<date>[0-9]{4}\/[0-9]{2}\/[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}) (?P<line>\/*[\w+-\/]+\.\w+:[0-9]+): (?P<level>[INFO|ERROR]*)(?P<msg>.*)\n$`)
 }
 
 func (l *Logger) Write(data []byte) (int, error) {
@@ -43,15 +42,9 @@ func (l *Logger) Write(data []byte) (int, error) {
 		return 0, err
 	}
 
-	var noLevel bool
-	re := reLevel
+	re := re
 	if !re.Match(data) {
-		re = reNoLevel
-		if !re.Match(data) {
-			return 0, errors.New("log entry doesn't match")
-		}
-
-		noLevel = true
+		return 0, errors.New("log entry doesn't match")
 	}
 
 	var transformer strings.Builder
@@ -65,24 +58,23 @@ func (l *Logger) Write(data []byte) (int, error) {
 	values := re.FindStringSubmatch(wholeMsj)
 	app := slices.Index(groups, "app")
 	date := slices.Index(groups, "date")
+	level := slices.Index(groups, "level")
 	line := slices.Index(groups, "line")
-	var level int
-	if !noLevel {
-		level = slices.Index(groups, "level")
-	}
 
 	msg := slices.Index(groups, "msg")
 	structured := make(map[string]string, 5)
 	structured["app"] = values[app]
 	structured["date"] = values[date]
 	structured["line"] = values[line]
-	if noLevel {
+	structured["level"] = values[level]
+	if len(structured["level"]) == 0 {
 		structured["level"] = "ERROR"
-	} else {
-		structured["level"] = values[level]
+	}
+	structured["message"] = values[msg]
+	if l.conn == nil {
+		return len(data), errors.New("fluentd connection is nil")
 	}
 
-	structured["message"] = values[msg]
 	return len(data), l.conn.Post(l.tag, structured)
 }
 

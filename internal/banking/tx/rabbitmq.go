@@ -29,20 +29,13 @@ type (
 	}
 
 	Worker struct {
-		Log         *log.Logger
-		Kafka       *kafka.Conn
-		TxPersistor interface {
-			Persist(context.Context, Tx) error
-		}
-		TxGetter interface {
-			Get(context.Context, string) (Tx, error)
-		}
-		AccountGetter interface {
-			Get(context.Context, string, string, string) (account.Account, error)
-		}
-		AccountPersistor interface {
-			Persist(context.Context, account.Account) error
-		}
+		LogPrintf      func(format string, v ...any)
+		LogPrint       func(v ...any)
+		KafkaPublish   func(topic string, msg []byte) error
+		TxPersist      func(context.Context, Tx) error
+		TxGet          func(ctx context.Context, txID string) (Tx, error)
+		AccountGet     func(ctx context.Context, bank, atype, number string) (account.Account, error)
+		AccountPersist func(context.Context, account.Account) error
 	}
 )
 
@@ -52,12 +45,13 @@ const (
 
 func NewWorker(deps WkrDeps) *Worker {
 	return &Worker{
-		Log:              deps.Log,
-		Kafka:            deps.Kafka,
-		TxGetter:         deps.TxRepo,
-		TxPersistor:      deps.TxRepo,
-		AccountGetter:    deps.AccountRepo,
-		AccountPersistor: deps.AccountRepo,
+		LogPrintf:      deps.Log.Printf,
+		LogPrint:       deps.Log.Print,
+		KafkaPublish:   deps.Kafka.Publish,
+		TxGet:          deps.TxRepo.Get,
+		TxPersist:      deps.TxRepo.Persist,
+		AccountGet:     deps.AccountRepo.Get,
+		AccountPersist: deps.AccountRepo.Persist,
 	}
 }
 
@@ -71,14 +65,14 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	var task pb.TransferJob
 	err := proto.Unmarshal(d.Body, &task)
 	if err != nil {
-		s.Log.Printf("umarshaling message: %v", err)
+		s.LogPrintf("umarshaling message: %v", err)
 		d.Reject(true)
 		return
 	}
 
-	tx, err := s.TxGetter.Get(ctx, task.Id)
+	tx, err := s.TxGet(ctx, task.Id)
 	if err != nil {
-		s.Log.Printf("getting tx from repository: %v", err)
+		s.LogPrintf("getting tx from repository: %v", err)
 		d.Reject(true)
 		return
 	}
@@ -86,7 +80,7 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	var srcAccount, dstAccount account.Account
 	g := new(errgroup.Group)
 	g.Go(func() error {
-		a, err := s.AccountGetter.Get(ctx, tx.SrcAccount.Bank, tx.SrcAccount.Type, tx.SrcAccount.Number)
+		a, err := s.AccountGet(ctx, tx.SrcAccount.Bank, tx.SrcAccount.Type, tx.SrcAccount.Number)
 		if err != nil {
 			d.Reject(true)
 			return fmt.Errorf("getting src account: %w", err)
@@ -96,7 +90,7 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	})
 
 	g.Go(func() error {
-		a, err := s.AccountGetter.Get(ctx, tx.DstAccount.Bank, tx.DstAccount.Type, tx.DstAccount.Number)
+		a, err := s.AccountGet(ctx, tx.DstAccount.Bank, tx.DstAccount.Type, tx.DstAccount.Number)
 		if err != nil {
 			d.Reject(true)
 			return fmt.Errorf("getting dst account: %w", err)
@@ -106,38 +100,38 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	})
 
 	if err = g.Wait(); err != nil {
-		s.Log.Print(err)
+		s.LogPrint(err)
 		d.Reject(true)
 		return
 	}
 
-	if !srcAccount.HasEnoughBalance(tx.Amount) {
-		s.Log.Printf("source account does not have enough balance")
+	if !account.HasBalance(srcAccount, tx.Amount) {
+		s.LogPrintf("source account does not have enough balance")
 		d.Ack(false)
 		return
 	}
 
-	if err := srcAccount.Debit(tx.Amount); err != nil {
-		s.Log.Printf("debitting amount: %v", err)
+	if err := account.Debit(&srcAccount, tx.Amount); err != nil {
+		s.LogPrintf("debitting amount: %v", err)
 		d.Reject(true)
 		return
 	}
 
-	if err := dstAccount.Credit(tx.Amount); err != nil {
-		s.Log.Printf("creditting account: %v", err)
+	if err := account.Credit(&dstAccount, tx.Amount); err != nil {
+		s.LogPrintf("creditting account: %v", err)
 		d.Reject(true)
 		return
 	}
 
 	g.Go(func() error {
-		if err := s.AccountPersistor.Persist(ctx, srcAccount); err != nil {
+		if err := s.AccountPersist(ctx, srcAccount); err != nil {
 			return fmt.Errorf("persisting src account: %w", err)
 		}
 		return nil
 	})
 
 	g.Go(func() error {
-		if err := s.AccountPersistor.Persist(ctx, dstAccount); err != nil {
+		if err := s.AccountPersist(ctx, dstAccount); err != nil {
 			return fmt.Errorf("persisting dst account: %w", err)
 		}
 		return nil
@@ -145,20 +139,20 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 
 	g.Go(func() error {
 		tx.Status = "completed"
-		if err := s.TxPersistor.Persist(ctx, tx); err != nil {
+		if err := s.TxPersist(ctx, tx); err != nil {
 			return fmt.Errorf("persisting tx: %w", err)
 		}
 		return nil
 	})
 
 	if err = g.Wait(); err != nil {
-		s.Log.Print(err)
+		s.LogPrint(err)
 		d.Reject(true)
 		return
 	}
 
 	if err := d.Ack(false); err != nil {
-		s.Log.Printf("acknowledging message: %v", err)
+		s.LogPrintf("acknowledging message: %v", err)
 		return
 	}
 
@@ -183,11 +177,11 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 		},
 	})
 	if err != nil {
-		s.Log.Printf("marshaling event: %v", err)
+		s.LogPrintf("marshaling event: %v", err)
 	}
 
-	err = s.Kafka.Publish(transferCompletedTopic, evt)
+	err = s.KafkaPublish(transferCompletedTopic, evt)
 	if err != nil {
-		s.Log.Printf("publishing event: %v", err)
+		s.LogPrintf("publishing event: %v", err)
 	}
 }

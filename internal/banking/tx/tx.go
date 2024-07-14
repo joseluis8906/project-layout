@@ -26,7 +26,7 @@ func (t Tx) IsZero() bool {
 	return t.ID == ""
 }
 
-func (t Tx) Validate() error {
+func Validate(t Tx) error {
 	sameAccount := t.SrcAccount.Bank == t.DstAccount.Bank &&
 		t.SrcAccount.Type == t.DstAccount.Type &&
 		t.SrcAccount.Number == t.DstAccount.Number

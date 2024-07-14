@@ -21,7 +21,7 @@ type (
 	}
 )
 
-func (a Account) Validate() error {
+func Validate(a Account) error {
 	validPhone := regexp.MustCompile(`^\+(57|52|593)\d{10}$`)
 	validID := regexp.MustCompile(`^\d+$`)
 	validEmail := regexp.MustCompile(`^[\w]+.*@[\w]+.(com|net|org)`)

@@ -24,7 +24,11 @@ type (
 	}
 )
 
-func (a Account) Validate() error {
+func (a Account) IsZero() bool {
+	return len(a.Type) == 0 || len(a.Number) == 0
+}
+
+func Validate(a Account) error {
 	validID := regexp.MustCompile(`^[0-9]+$`)
 	validEmail := regexp.MustCompile(`^[\w]+.*@[\w]+.(com|net|org)`)
 	validName := regexp.MustCompile(`^[\w]{2,} [\w]{2,}$`)
@@ -53,30 +57,26 @@ func (a Account) Validate() error {
 	return nil
 }
 
-func (a Account) IsZero() bool {
-	return a.Type == "" || a.Number == ""
-}
-
-func (a *Account) Credit(amount money.Money) error {
+func Credit(a *Account, amount money.Money) error {
 	if a.Balance.Currency != amount.Currency {
 		return errors.New("different currencies")
 	}
 
-	v := a.Balance.Add(amount)
+	v := money.Add(a.Balance, amount)
 	a.Balance = v
 	return nil
 }
 
-func (a *Account) Debit(amount money.Money) error {
+func Debit(a *Account, amount money.Money) error {
 	if a.Balance.Currency != amount.Currency {
 		return errors.New("different currencies")
 	}
 
-	v := a.Balance.Sub(amount)
+	v := money.Sub(a.Balance, amount)
 	a.Balance = v
 	return nil
 }
 
-func (a *Account) HasEnoughBalance(amount money.Money) bool {
-	return a.Balance.GtOrEq(amount)
+func HasBalance(a Account, amount money.Money) bool {
+	return money.GtOrEq(a.Balance, amount)
 }
