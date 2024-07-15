@@ -82,7 +82,6 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	g.Go(func() error {
 		a, err := s.AccountGet(ctx, tx.SrcAccount.Bank, tx.SrcAccount.Type, tx.SrcAccount.Number)
 		if err != nil {
-			d.Reject(true)
 			return fmt.Errorf("getting src account: %w", err)
 		}
 		srcAccount = a
@@ -92,7 +91,6 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	g.Go(func() error {
 		a, err := s.AccountGet(ctx, tx.DstAccount.Bank, tx.DstAccount.Type, tx.DstAccount.Number)
 		if err != nil {
-			d.Reject(true)
 			return fmt.Errorf("getting dst account: %w", err)
 		}
 		dstAccount = a
