@@ -42,8 +42,8 @@ type (
 )
 
 const (
-	transferCompletedTopic = "banking.v1.completed_transfers"
-	transfersQueue         = "banking.transfers"
+	completedTransfersTopic = "banking.v1.completed_transfers"
+	transfersQueue          = "banking.transfers"
 )
 
 func NewWorker(deps WkrDeps) *Worker {
@@ -184,8 +184,7 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 		s.LogPrintf("marshaling event: %v", err)
 	}
 
-	err = s.KafkaPublish(transferCompletedTopic, evt)
-	if err != nil {
+	if err := s.KafkaPublish(completedTransfersTopic, evt); err != nil {
 		s.LogPrintf("publishing event: %v", err)
 	}
 }

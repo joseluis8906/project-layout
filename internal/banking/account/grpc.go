@@ -34,8 +34,8 @@ type (
 )
 
 const (
-	accountCreatedTopic  = "banking.v1.account_created"
-	accountCreditedTopic = "banking.v1.account_credited"
+	createdAccountsTopic  = "banking.v1.created_accounts"
+	creditedAccountsTopic = "banking.v1.credited_accounts"
 )
 
 func New(deps SvcDeps) *Service {
@@ -86,8 +86,7 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 		s.LogPrintf("marshaling event: %v", err)
 	}
 
-	err = s.KafkaPublish(accountCreatedTopic, evt)
-	if err != nil {
+	if err := s.KafkaPublish(createdAccountsTopic, evt); err != nil {
 		s.LogPrintf("publishing event: %v", err)
 	}
 
@@ -127,7 +126,7 @@ func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountReques
 		s.LogPrintf("marshaling event: %v", err)
 	}
 
-	if err := s.KafkaPublish(accountCreditedTopic, evt); err != nil {
+	if err := s.KafkaPublish(creditedAccountsTopic, evt); err != nil {
 		s.LogPrintf("publishing event: %v", err)
 	}
 
