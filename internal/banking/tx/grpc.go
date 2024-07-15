@@ -35,10 +35,6 @@ type (
 	}
 )
 
-const (
-	transfersQueue = "banking.transfers"
-)
-
 func New(deps SvcDeps) *Service {
 	s := &Service{
 		LogPrintf:       deps.Log.Printf,
@@ -47,7 +43,6 @@ func New(deps SvcDeps) *Service {
 		TxGet:           deps.TxRepo.Get,
 	}
 
-	deps.RabbitMQ.Subscribe(transfersQueue, deps.Worker.ProcessTransfer)
 	return s
 }
 

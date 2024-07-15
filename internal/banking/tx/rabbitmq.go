@@ -11,6 +11,7 @@ import (
 	"github.com/joseluis8906/project-layout/internal/banking/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
+	"github.com/joseluis8906/project-layout/pkg/rabbitmq"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel"
@@ -24,6 +25,7 @@ type (
 		fx.In
 		Log         *log.Logger
 		Kafka       *kafka.Conn
+		RabbitMQ    *rabbitmq.Conn
 		TxRepo      *Repository
 		AccountRepo *account.Repository
 	}
@@ -40,11 +42,12 @@ type (
 )
 
 const (
-	transferCompletedTopic = "banking.v1.transfer_completed"
+	transferCompletedTopic = "banking.v1.completed_transfers"
+	transfersQueue         = "banking.transfers"
 )
 
 func NewWorker(deps WkrDeps) *Worker {
-	return &Worker{
+	w := Worker{
 		LogPrintf:      deps.Log.Printf,
 		LogPrint:       deps.Log.Print,
 		KafkaPublish:   deps.Kafka.Publish,
@@ -53,6 +56,9 @@ func NewWorker(deps WkrDeps) *Worker {
 		AccountGet:     deps.AccountRepo.Get,
 		AccountPersist: deps.AccountRepo.Persist,
 	}
+
+	deps.RabbitMQ.Subscribe(transfersQueue, w.ProcessTransfer)
+	return &w
 }
 
 func (s *Worker) ProcessTransfer(d amqp.Delivery) {
