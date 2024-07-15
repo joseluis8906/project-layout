@@ -29,7 +29,6 @@ type (
 	Service struct {
 		pb.UnimplementedTxServiceServer
 		LogPrintf       func(format string, v ...any)
-		Kafka           *kafka.Conn
 		RabbitMQPublish func(ctx context.Context, exchange, key string, mandatory, inmediate bool, msg amqp.Publishing) error
 		TxPersist       func(context.Context, Tx) error
 		TxGet           func(context.Context, string) (Tx, error)
@@ -43,7 +42,6 @@ const (
 func New(deps SvcDeps) *Service {
 	s := &Service{
 		LogPrintf:       deps.Log.Printf,
-		Kafka:           deps.Kafka,
 		RabbitMQPublish: deps.RabbitMQ.Publish,
 		TxPersist:       deps.TxRepo.Persist,
 		TxGet:           deps.TxRepo.Get,
