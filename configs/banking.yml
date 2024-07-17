@@ -1,9 +1,9 @@
 app:
   name: banking
 otel:
-  endpoint: http://yummies.local:4317
+  endpoint: http://layout.local:4317
 fluentd:
-  host: yummies.local
+  host: layout.local
   port: 24224
   network: tcp
   json: true
@@ -13,10 +13,10 @@ grpc:
 http:
   addr: ':9090'
 nats:
-  url: 'nats://yummies.local:4222'
+  url: 'nats://layout.local:4222'
 kafka:
   bootstrap:
-    servers: 'yummies.local:9092'
+    servers: 'layout.local:9092'
   acks: all
   group:
     id: banking
@@ -26,7 +26,7 @@ kafka:
   topics:
     - v1.tested
 mongodb:
-  uri: 'mongodb://yummies:yummies@yummies.local:27017/banking?authMechanism=PLAIN'
+  uri: 'mongodb://layout:layout@layout.local:27017/banking?authMechanism=PLAIN'
 rabbitmq:
-    url: 'amqp://guest:guest@yummies.local:5672/'
+    url: 'amqp://layout:layout@layout.local:5672/'
 pprof: true

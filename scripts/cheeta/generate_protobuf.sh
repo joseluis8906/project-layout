@@ -1,9 +1,8 @@
 #!/bin/bash
-#
 
 SRV_NAME="$1"
-PROJECT_NAME=$(grep 'module' ../go.mod | awk -F ' ' '{print $2}')
-DIRECTORY="../protobuf/$SRV_NAME"
+PROJECT_NAME=$(grep 'module' ../../go.mod | awk -F ' ' '{print $2}')
+DIRECTORY="../../protobuf/$SRV_NAME"
 if [ ! -d "$DIRECTORY" ]; then
     mkdir -p "$DIRECTORY"
 fi
@@ -41,7 +40,7 @@ message Events_V1 {
             string msg = 1;
         }
         string id = 1;
-        uint64 occurred_on = 2;
+        int64 occurred_on = 2;
         Attributes attributes = 3;
     }
 }

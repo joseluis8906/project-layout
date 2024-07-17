@@ -1,3 +1,3 @@
 #!/bin/bash
-#
-etcdctl --endpoints=yummies.local:2379 put /configs/$1 "$(cat -v ./$1)"
+
+etcdctl --endpoints=$INFRA_HOST:2379 put /configs/$1 "$(cat -v ./$1)"

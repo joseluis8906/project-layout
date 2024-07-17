@@ -1,9 +1,8 @@
 #!/bin/bash
-#
 
 SRV_NAME="$1"
-PROJECT_NAME=$(grep 'module' ../go.mod | awk -F ' ' '{print $2}')
-DIRECTORY="../internal/$SRV_NAME"
+PROJECT_NAME=$(grep 'module' ../../go.mod | awk -F ' ' '{print $2}')
+DIRECTORY="../../internal/$SRV_NAME"
 if [ ! -d "$DIRECTORY" ]; then
     mkdir -p "$DIRECTORY/app"
     mkdir -p "$DIRECTORY/hello"
@@ -247,8 +246,20 @@ import (
 
 func New() *viper.Viper {
 	v := viper.New()
-	v.AddRemoteProvider("etcd3", os.Getenv("CONFIG_URL"), "/configs/$SRV_NAME.yml")
+    v.AddConfigPath("./configs")
+    v.SetConfigName("$SRV_NAME")
 	v.SetConfigType("yml")
+    err := v.ReadInConfig()
+    if err != nil {
+        log.Fatalf("cannot read config file: %v", err)
+    }
+
+	configURL, ok := os.LookupEnv("CONFIG_URL")
+	if !ok {
+		return v
+	}
+
+	v.AddRemoteProvider("etcd3", configURL, "/configs/$SRV_NAME.yml")
 	if err := v.ReadRemoteConfig(); err != nil {
 		log.Fatalf("cannot read remote config: %v", err)
 	}

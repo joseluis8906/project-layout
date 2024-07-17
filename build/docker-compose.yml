@@ -4,8 +4,8 @@ services:
     image: docker.io/postgres
     container_name: postgres
     environment:
-      - POSTGRES_USER=layout
-      - POSTGRES_PASSWORD=layout
+      - POSTGRES_USER=${INFRA_USER}
+      - POSTGRES_PASSWORD=${INFRA_PASSWD}
       - POSTGRES_DB=layout
     restart: always
     volumes:
@@ -18,7 +18,7 @@ services:
     ports:
       - 27017:27017
     environment:
-      - FERRETDB_POSTGRESQL_URL=postgres://layout:layout@postgres:5432/layout
+      - FERRETDB_POSTGRESQL_URL=postgres://${INFRA_USER}:${INFRA_PASSWD}@postgres:5432/layout
 
   prometheus:
     image: docker.io/prom/prometheus
@@ -75,6 +75,8 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
     environment:
+      - GF_SECURITY_ADMIN_USER=${INFRA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${INFRA_PASSWD}
       - GF_SERVER_DOMAIN=layout.local
       - GF_SERVER_ROOT_URL=https://layout.local/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
@@ -174,6 +176,9 @@ services:
     ports:
       - "15672:15672"
       - "5672:5672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${INFRA_USER}
+      - RABBITMQ_DEFAULT_PASS=${INFRA_PASSWD}
 
 volumes:
   postgres-data:

@@ -1,9 +1,8 @@
 #!/bin/bash
-#
 
 SRV_NAME="$1"
-PROJECT_NAME=$(grep 'module' ../go.mod | awk -F ' ' '{print $2}')
-DIRECTORY="../cmd/$SRV_NAME"
+PROJECT_NAME=$(grep 'module' ../../go.mod | awk -F ' ' '{print $2}')
+DIRECTORY="../../cmd/$SRV_NAME"
 if [ ! -d "$DIRECTORY" ]; then
     mkdir -p "$DIRECTORY"
 fi

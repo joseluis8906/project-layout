@@ -1,15 +1,14 @@
 #!/bin/bash
-#
 
 SRV_NAME="$1"
-DIRECTORY="../configs"
+DIRECTORY="../../configs"
 cat << EOF > "$DIRECTORY/$SRV_NAME.yml"
 app:
   name: $SRV_NAME
 otel:
-  endpoint: http://yummies.local:4317
+  endpoint: http://$INFRA_HOST:4317
 fluentd:
-  host: yummies.local
+  host: $INFRA_HOST
   port: 24224
   network: tcp
   json: true
@@ -17,12 +16,12 @@ fluentd:
 grpc:
   port: 50051
 http:
-  addr: ':9090'
+  addr: ':9191'
 nats:
-  url: 'nats://yummies.local:4222'
+  url: 'nats://$INFRA_HOST:4222'
 kafka:
   bootstrap:
-    servers: 'yummies.local:9092'
+    servers: '$INFRA_HOST:9093'
   acks: all
   group:
     id: $SRV_NAME
@@ -32,9 +31,9 @@ kafka:
   topics:
     - v1.tested
 mongodb:
-  uri: 'mongodb://yummies:yummies@yummies.local:27017/$SRV_NAME?authMechanism=PLAIN'
+  uri: 'mongodb://$INFRA_USER:$INFRA_PASSWD@$INFRA_HOST:27017/$SRV_NAME?authMechanism=PLAIN'
 rabbitmq:
-    url: 'amqp://guest:guest@yummies.local:5672/'
+    url: 'amqp://$INFRA_USER:$INFRA_PASSWD@$INFRA_HOST:5672/'
 pprof: true
 EOF
 

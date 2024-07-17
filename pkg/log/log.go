@@ -72,7 +72,7 @@ func (l *Logger) Write(data []byte) (int, error) {
 	}
 	structured["message"] = values[msg]
 	if l.conn == nil {
-		return len(data), errors.New("fluentd connection is nil")
+		return 0, errors.New("fluentd connection is nil")
 	}
 
 	return len(data), l.conn.Post(l.tag, structured)

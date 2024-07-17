@@ -10,8 +10,20 @@ import (
 
 func New() *viper.Viper {
 	v := viper.New()
-	v.AddRemoteProvider("etcd3", os.Getenv("CONFIG_URL"), "/configs/banking.yml")
+	v.AddConfigPath("./configs/")
+	v.SetConfigName("banking")
 	v.SetConfigType("yml")
+	err := v.ReadInConfig()
+	if err != nil {
+		log.Fatalf("cannot read config file: %v", err)
+	}
+
+	configURL, ok := os.LookupEnv("CONFIG_URL")
+	if !ok {
+		return v
+	}
+
+	v.AddRemoteProvider("etcd3", configURL, "/configs/banking.yml")
 	if err := v.ReadRemoteConfig(); err != nil {
 		log.Fatalf("cannot read remote config: %v", err)
 	}
