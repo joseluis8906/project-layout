@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/joseluis8906/project-layout/pkg/otel"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 )
 
@@ -35,7 +35,7 @@ func NewRepository(deps RepoDeps) *Repository {
 }
 
 func (r *Repository) Persist(ctx context.Context, account Account) error {
-	_, span := otel.Tracer("").Start(ctx, "banking.AccountRepository/Persist")
+	_, span := otel.Start(ctx, otel.NoTracer, "banking.AccountRepository/Persist")
 	defer span.End()
 
 	filter := bson.D{
@@ -45,14 +45,14 @@ func (r *Repository) Persist(ctx context.Context, account Account) error {
 	}
 	_, err := r.db.ReplaceOne(ctx, filter, account, options.Replace().SetUpsert(true))
 	if err != nil {
-		return fmt.Errorf("replacing one account: %w", err)
+		return fmt.Errorf("replacing one document: %w", err)
 	}
 
 	return nil
 }
 
 func (r *Repository) Get(ctx context.Context, bank, aType, number string) (Account, error) {
-	_, span := otel.Tracer("").Start(ctx, "banking.AccountRepository/Get")
+	_, span := otel.Start(ctx, otel.NoTracer, "banking.AccountRepository/Get")
 	defer span.End()
 
 	filter := bson.D{
@@ -62,7 +62,7 @@ func (r *Repository) Get(ctx context.Context, bank, aType, number string) (Accou
 	}
 	cur := r.db.FindOne(ctx, filter)
 	if err := cur.Err(); err != nil {
-		return Account{}, fmt.Errorf("finding account: %w", err)
+		return Account{}, fmt.Errorf("finding one document: %w", err)
 	}
 
 	var account Account

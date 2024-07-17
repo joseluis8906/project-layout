@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -9,9 +10,9 @@ import (
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	pkglog "github.com/joseluis8906/project-layout/pkg/log"
 	"github.com/joseluis8906/project-layout/pkg/money"
+	"github.com/joseluis8906/project-layout/pkg/otel"
 	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
 
-	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 	"google.golang.org/protobuf/proto"
 )
@@ -53,19 +54,19 @@ func (s *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Re
 	}
 	if err := Validate(newAccount); err != nil {
 		s.LogPrintf("validating account: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("validating account: %w", err)
 	}
 
 	if err := s.AccountPersist(ctx, newAccount); err != nil {
 		s.LogPrintf("persisting account: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("persisting account: %w", err)
 	}
 
 	return &pb.RegisterResponse{}, nil
 }
 
 func (s *Service) OnTested(msg *kafka.Message) {
-	_, span := otel.Tracer("").Start(context.Background(), "mtx.HelloService/OnTested")
+	_, span := otel.Start(context.Background(), otel.NoTracer, "mtx.HelloService/OnTested")
 	defer span.End()
 
 	var evt pkgpb.V1_Tested

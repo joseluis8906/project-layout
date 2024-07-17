@@ -159,9 +159,9 @@ import (
 	"$PROJECT_NAME/internal/$SRV_NAME/pb"
 	"$PROJECT_NAME/pkg/kafka"
 	pkglog "$PROJECT_NAME/pkg/log"
+	"$PROJECT_NAME/pkg/otel"
 
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 	"google.golang.org/protobuf/proto"
 )
@@ -195,7 +195,7 @@ func New(deps Deps) *Service {
 }
 
 func (s *Service) World(ctx context.Context, req *pb.HelloWorldRequest) (*pb.HelloWorldResponse, error) {
-	_, span := otel.Tracer("").Start(context.Background(), "$SRV_NAME.HelloService/World")
+	_, span := otel.Start(context.Background(), otel.NoTracer, "$SRV_NAME.HelloService/World")
 	defer span.End()
 
 	evt, err := proto.Marshal(&pb.Events_V1_Tested{
@@ -219,7 +219,7 @@ func (s *Service) World(ctx context.Context, req *pb.HelloWorldRequest) (*pb.Hel
 }
 
 func (s *Service) OnTested(msg *kafka.Message) {
-	_, span := otel.Tracer("").Start(context.Background(), "$SRV_NAME.HelloService/OnTested")
+	_, span := otel.Start(context.Background(), otel.NoTracer, "$SRV_NAME.HelloService/OnTested")
 	defer span.End()
 
 	var evt pb.Events_V1_Tested

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/joseluis8906/project-layout/pkg/otel"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 )
 
@@ -35,7 +35,7 @@ func NewRepository(deps RepoDeps) *Repository {
 }
 
 func (r *Repository) Persist(ctx context.Context, tx Tx) error {
-	_, span := otel.Tracer("").Start(ctx, "banking.TxRepository/Persist")
+	_, span := otel.Start(ctx, otel.NoTracer, "banking.TxRepository/Persist")
 	defer span.End()
 
 	filter := bson.D{{Key: "id", Value: tx.ID}}
@@ -48,7 +48,7 @@ func (r *Repository) Persist(ctx context.Context, tx Tx) error {
 }
 
 func (r *Repository) Get(ctx context.Context, id string) (Tx, error) {
-	_, span := otel.Tracer("").Start(ctx, "banking.TxRepository/Get")
+	_, span := otel.Start(ctx, otel.NoTracer, "banking.TxRepository/Get")
 	defer span.End()
 
 	filter := bson.D{{Key: "id", Value: id}}

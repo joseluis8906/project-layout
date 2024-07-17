@@ -6,6 +6,11 @@ import (
 	"github.com/joseluis8906/project-layout/pkg/money"
 )
 
+const (
+	StatusPending   = "pending"
+	StatusCompleted = "completed"
+)
+
 type (
 	Tx struct {
 		ID         string      `bson:"id"`

@@ -84,10 +84,12 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 	})
 	if err != nil {
 		s.LogPrintf("marshaling event: %v", err)
+		return nil, fmt.Errorf("marshaling event: %w", err)
 	}
 
 	if err := s.KafkaPublish(createdAccountsTopic, evt); err != nil {
 		s.LogPrintf("publishing event: %v", err)
+		return nil, fmt.Errorf("publishing event: %w", err)
 	}
 
 	return &pb.CreateAccountResponse{Number: newAccount.Number}, nil
@@ -124,10 +126,12 @@ func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountReques
 	})
 	if err != nil {
 		s.LogPrintf("marshaling event: %v", err)
+		return nil, fmt.Errorf("marshaling event: %w", err)
 	}
 
 	if err := s.KafkaPublish(creditedAccountsTopic, evt); err != nil {
 		s.LogPrintf("publishing event: %v", err)
+		return nil, fmt.Errorf("publishing event: %w", err)
 	}
 
 	return &pb.CreditAccountResponse{}, nil

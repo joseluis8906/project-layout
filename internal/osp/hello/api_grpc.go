@@ -3,15 +3,15 @@ package hello
 import (
 	"context"
 	"log"
-    "time"
+	"time"
 
 	"github.com/joseluis8906/project-layout/internal/osp/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	loglevel "github.com/joseluis8906/project-layout/pkg/log"
+	"github.com/joseluis8906/project-layout/pkg/otel"
 	evtpb "github.com/joseluis8906/project-layout/pkg/pb"
 
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 	"google.golang.org/protobuf/proto"
 )
@@ -27,7 +27,7 @@ type (
 		pb.UnimplementedHelloServiceServer
 		log   *log.Logger
 		kafka *kafka.Conn
-    }
+	}
 )
 
 func New(deps Deps) *Service {
@@ -37,17 +37,17 @@ func New(deps Deps) *Service {
 	}
 
 	deps.Kafka.Subscribe("v1.tested", s.OnTested)
-    return s
+	return s
 }
 
 func (s *Service) World(ctx context.Context, req *pb.HelloWorldRequest) (*pb.HelloWorldResponse, error) {
-	_, span := otel.Tracer("").Start(context.Background(), "osp.HelloService/World")
+	_, span := otel.Start(context.Background(), otel.NoTracer, "osp.HelloService/World")
 	defer span.End()
 
 	evt, err := proto.Marshal(&evtpb.V1_Tested{
 		Id:         uuid.New().String(),
 		OccurredOn: time.Now().UnixMilli(),
-        Msg:        req.Msg,
+		Msg:        req.Msg,
 	})
 	if err != nil {
 		s.log.Printf("marshaling event: %v", err)
@@ -58,12 +58,12 @@ func (s *Service) World(ctx context.Context, req *pb.HelloWorldRequest) (*pb.Hel
 		s.log.Printf("publishing event: %v", err)
 	}
 
-    s.log.Println(loglevel.Info("hello world!"))
-    return &pb.HelloWorldResponse{Msg: req.Msg}, nil
+	s.log.Println(loglevel.Info("hello world!"))
+	return &pb.HelloWorldResponse{Msg: req.Msg}, nil
 }
 
 func (s *Service) OnTested(msg *kafka.Message) {
-	_, span := otel.Tracer("").Start(context.Background(), "osp.HelloService/OnTested")
+	_, span := otel.Start(context.Background(), otel.NoTracer, "osp.HelloService/OnTested")
 	defer span.End()
 
 	var evt evtpb.V1_Tested

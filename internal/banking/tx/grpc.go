@@ -64,7 +64,7 @@ func (s *Service) Transfer(ctx context.Context, req *pb.TransferRequest) (*pb.Tr
 			Type:   req.DstAccount.Type,
 			Number: req.DstAccount.Number,
 		},
-		Status: "pending",
+		Status: StatusPending,
 	}
 	if err := Validate(newTx); err != nil {
 		s.LogPrintf("validiting tx: %v", err)
@@ -88,9 +88,8 @@ func (s *Service) Transfer(ctx context.Context, req *pb.TransferRequest) (*pb.Tr
 	}
 
 	msg := amqp.Publishing{DeliveryMode: amqp.Persistent, Body: data}
-	//
-	if err := s.RabbitMQPublish(tmCtx, "", transfersQueue, false, false, msg); err != nil {
-		s.LogPrintf("publishing amqp message: %v", err)
+	if err := s.RabbitMQPublish(tmCtx, rabbitmq.NoExchange, transfersQueue, false, false, msg); err != nil {
+		s.LogPrintf("publishing message: %v", err)
 		return nil, err
 	}
 

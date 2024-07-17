@@ -10,6 +10,10 @@ import (
 	"golang.org/x/net/context"
 )
 
+const (
+	NoExchange = ""
+)
+
 type (
 	Deps struct {
 		fx.In

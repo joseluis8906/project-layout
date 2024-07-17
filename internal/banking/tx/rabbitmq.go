@@ -10,11 +10,11 @@ import (
 	"github.com/joseluis8906/project-layout/internal/banking/account"
 	"github.com/joseluis8906/project-layout/internal/banking/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
+	"github.com/joseluis8906/project-layout/pkg/otel"
 	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
 	"github.com/joseluis8906/project-layout/pkg/rabbitmq"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
@@ -65,7 +65,7 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	ctx, cancelFn := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancelFn()
 
-	ctx, span := otel.Tracer("").Start(ctx, "banking.TxWorker/ProcessTransfer")
+	ctx, span := otel.Start(ctx, otel.NoTracer, "banking.TxWorker/ProcessTransfer")
 	defer span.End()
 
 	var task pb.TransferJob
@@ -142,7 +142,7 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	})
 
 	g.Go(func() error {
-		tx.Status = "completed"
+		tx.Status = StatusCompleted
 		if err := s.TxPersist(ctx, tx); err != nil {
 			return fmt.Errorf("persisting tx: %w", err)
 		}
@@ -182,9 +182,11 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 	})
 	if err != nil {
 		s.LogPrintf("marshaling event: %v", err)
+		return
 	}
 
 	if err := s.KafkaPublish(completedTransfersTopic, evt); err != nil {
 		s.LogPrintf("publishing event: %v", err)
+		return
 	}
 }
