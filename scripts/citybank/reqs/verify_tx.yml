@@ -1,0 +1,6 @@
+service: citybank 
+proto: tx.proto
+method: citybank.BankService.VerifyTx
+headers:
+body:
+  code: 1234

@@ -1,0 +1,32 @@
+app:
+  name: itau
+otel:
+  endpoint: http://layout.local:4317
+fluentd:
+  host: layout.local
+  port: 24224
+  network: tcp
+  json: true
+  tag: my.logs 
+grpc:
+  port: 50051
+http:
+  addr: ':9191'
+nats:
+  url: 'nats://layout.local:4222'
+kafka:
+  bootstrap:
+    servers: 'layout.local:9093'
+  acks: all
+  group:
+    id: itau
+  auto:
+    offset:
+      reset: earliest
+  topics:
+    - v1.tested
+mongodb:
+  uri: 'mongodb://layout:layout@layout.local:27017/itau?authMechanism=PLAIN'
+rabbitmq:
+    url: 'amqp://layout:layout@layout.local:5672/'
+pprof: true

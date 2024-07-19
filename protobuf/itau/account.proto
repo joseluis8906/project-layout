@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package itau;
+
+import "finance.proto";
+option go_package = "github.com/joseluis8906/project-layout/internal/itau/pb";
+
+service AccountService {
+    rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+    rpc CreditAccount(CreditAccountRequest) returns (CreditAccountResponse);
+}
+
+message CreateAccountRequest {
+    message Owner {
+        string id = 1;
+        string email = 2;
+        string country = 3;
+        string full_name = 4;
+    }
+
+    string bank = 1;
+    string type = 2;
+    company.Money balance = 3;
+    Owner owner = 4;
+}
+
+message CreateAccountResponse {
+    string number = 1;
+}
+
+message CreditAccountRequest {
+    string bank = 1;
+    string type = 2;
+    string number = 3;
+    company.Money amount = 4;
+}
+
+message CreditAccountResponse {}

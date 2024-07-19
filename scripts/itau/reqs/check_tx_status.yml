@@ -1,0 +1,6 @@
+service: itau
+proto: tx.proto
+method: itau.BankService.CheckTxStatus
+headers:
+body:
+  tx_id: 2024061900001

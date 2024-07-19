@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package citybank;
+
+import "finance.proto";
+option go_package = "github.com/joseluis8906/project-layout/internal/citybank/pb";
+
+service TxService {
+    rpc Transfer(TransferRequest) returns (TransferResponse);
+    rpc CheckTxStatus(CheckTxStatusRequest) returns (CheckTxStatusResponse);
+}
+
+message TransferRequest {
+    TxAccount src_account = 1;
+    TxAccount dst_account = 2;
+    company.Money amount = 3;
+}
+
+message TransferJob {
+    string id = 1;
+    TxAccount src_account = 2;
+    TxAccount dst_account = 3;
+    company.Money amount = 4;
+}
+
+message TransferResponse {
+    string tx_id = 1;
+}
+
+message TxAccount {
+    string bank = 1;
+    string type = 2;
+    string number = 3;
+}
+
+message CheckTxStatusRequest {
+    string tx_id = 1;
+}
+
+message CheckTxStatusResponse {
+    string status = 1;
+}

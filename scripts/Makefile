@@ -41,3 +41,29 @@ osp-run:
 osp-debug:
 	@cd scripts/osp && make debug
 
+# itau
+.PHONY: itau-build
+itau-build:
+	@cd scripts/itau && make build
+
+.PHONY: itau-run
+itau-run:
+	@cd scripts/itau && make run
+
+.PHONY: itau-debug
+itau-debug:
+	@cd scripts/itau && make debug
+
+# citybank
+.PHONY: citybank-build
+citybank-build:
+	@cd scripts/citybank && make build
+
+.PHONY: citybank-run
+citybank-run:
+	@cd scripts/citybank && make run
+
+.PHONY: citybank-debug
+citybank-debug:
+	@cd scripts/citybank && make debug
+

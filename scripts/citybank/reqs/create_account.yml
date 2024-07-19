@@ -1,0 +1,14 @@
+service: citybank 
+proto: citybank.proto
+method: citybank.AccountService.CreateAccount
+headers:
+body:
+  type: saving account
+  balance:
+    amount: 50000
+    currency: COP
+  owner:
+    id: '1234567890'
+    country: CO
+    email: john.doe@example.com
+    full_name: John Doe
