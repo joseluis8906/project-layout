@@ -134,21 +134,26 @@ import (
 	"go.uber.org/fx"
 )
 
-// Module exports the module for app.
-var Module = fx.Provide(
-	//infra
-	config.New,
-	log.New,
-	mongodb.New,
-	kafka.New,
-	nats.New,
+var (
+    InfraModule = fx.Provide(
+	    config.New,
+	    log.New,
+	    mongodb.New,
+	    kafka.New,
+	    nats.New,
+    )
 
-	//services
-	hello.New,
+    RepoModule = fx.Provide()
+
+    WorkerModule = fx.Provide()
+
+    GRPCModule = fx.Provide(
+	    hello.NewGRPC,
+    )
 )
 EOF
 
-cat << EOF > $DIRECTORY/hello/api_grpc.go
+cat << EOF > $DIRECTORY/hello/grpc.go
 package hello
 
 import (
@@ -184,7 +189,7 @@ const (
     v1TestedTopic = "$SRV_NAME.v1.tested"
 )
 
-func New(deps Deps) *Service {
+func NewGRPC(deps Deps) *Service {
 	s := &Service{
 		log:   deps.Log,
 		kafka: deps.Kafka,
@@ -195,9 +200,6 @@ func New(deps Deps) *Service {
 }
 
 func (s *Service) World(ctx context.Context, req *pb.HelloWorldRequest) (*pb.HelloWorldResponse, error) {
-	_, span := otel.Start(context.Background(), otel.NoTracer, "$SRV_NAME.HelloService/World")
-	defer span.End()
-
 	evt, err := proto.Marshal(&pb.Events_V1_Tested{
 		Id:         uuid.New().String(),
 		OccurredOn: time.Now().UnixMilli(),
