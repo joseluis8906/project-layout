@@ -58,7 +58,7 @@ chmod +x $DIRECTORY/reqs/req.sh
 cat << EOF > $DIRECTORY/reqs/hello_world.yml
 service: $SRV_NAME 
 proto: hello.proto
-method: $SRV_NAME.HelloService.World
+method: HelloService.World
 headers:
 body:
   msg: it works
