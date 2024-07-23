@@ -1,6 +1,6 @@
 service: itau 
 proto: tx.proto
-method: itau.TxService.Transfer
+method: TxService.Transfer
 headers:
 body:
   amount:

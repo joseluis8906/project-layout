@@ -1,6 +1,6 @@
 service: citybank
 proto: tx.proto
-method: citybank.TxService.Transfer
+method: TxService.Transfer
 headers:
 body:
   amount:

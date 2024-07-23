@@ -1,6 +1,6 @@
 service: mtx 
 proto: mtx.proto
-method: mtx.AccountService.Register
+method: AccountService.Register
 headers:
 body:
   phone_number: '+571234567890'

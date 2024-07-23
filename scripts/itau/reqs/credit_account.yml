@@ -1,6 +1,6 @@
 service: itau 
 proto: itau.proto
-method: itau.AccountService.CreditAccount
+method: AccountService.CreditAccount
 headers:
 body:
   type: saving account

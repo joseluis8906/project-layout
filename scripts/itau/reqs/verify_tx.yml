@@ -1,6 +1,6 @@
 service: itau 
 proto: tx.proto
-method: itau.BankService.VerifyTx
+method: BankService.VerifyTx
 headers:
 body:
   code: 1234

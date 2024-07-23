@@ -1,6 +1,6 @@
 service: citybank 
 proto: citybank.proto
-method: citybank.AccountService.CreditAccount
+method: AccountService.CreditAccount
 headers:
 body:
   type: saving account

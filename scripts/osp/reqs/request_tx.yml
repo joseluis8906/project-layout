@@ -1,6 +1,6 @@
 service: osp 
 proto: osp.proto
-method: osp.TxService.Request
+method: TxService.Request
 headers:
 body:
   src_account:

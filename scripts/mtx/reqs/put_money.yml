@@ -1,6 +1,6 @@
 service: mtx 
 proto: mtx.proto
-method: mtx.MtxService.PutMoney
+method: MtxService.PutMoney
 headers:
 body:
   phone_number: +571234567890

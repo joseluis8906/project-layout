@@ -1,6 +1,6 @@
 service: citybank
 proto: tx.proto
-method: citybank.BankService.CheckTxStatus
+method: BankService.CheckTxStatus
 headers:
 body:
   tx_id: 2024061900001

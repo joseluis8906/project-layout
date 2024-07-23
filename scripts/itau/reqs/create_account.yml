@@ -1,6 +1,6 @@
 service: itau 
-proto: itau.proto
-method: itau.AccountService.CreateAccount
+proto: account.proto
+method: AccountService.CreateAccount
 headers:
 body:
   type: saving account
