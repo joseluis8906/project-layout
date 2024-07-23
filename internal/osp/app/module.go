@@ -5,22 +5,27 @@ import (
 	"github.com/joseluis8906/project-layout/internal/osp/hello"
 
 	"github.com/joseluis8906/project-layout/pkg/kafka"
-	"github.com/joseluis8906/project-layout/pkg/nats"
 	"github.com/joseluis8906/project-layout/pkg/log"
 	"github.com/joseluis8906/project-layout/pkg/mongodb"
+	"github.com/joseluis8906/project-layout/pkg/nats"
 
 	"go.uber.org/fx"
 )
 
-// Module exports the module for app.
-var Module = fx.Provide(
-	//infra
-	config.New,
-	log.New,
-	mongodb.New,
-	kafka.New,
-	nats.New,
+var (
+	InfraModule = fx.Provide(
+		config.New,
+		log.New,
+		mongodb.New,
+		kafka.New,
+		nats.New,
+	)
 
-	//services
-	hello.New,
+	RepoModule = fx.Provide()
+
+	WorkerModule = fx.Provide()
+
+	GRPCModule = fx.Provide(
+		hello.NewGRPC,
+	)
 )

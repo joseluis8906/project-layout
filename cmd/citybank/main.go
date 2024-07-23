@@ -18,7 +18,10 @@ func main() {
 	defer stop()
 
 	app := fx.New(
-		fx.Options(app.Module),
+		fx.Options(app.InfraModule),
+		fx.Options(app.RepoModule),
+		fx.Options(app.WorkerModule),
+		fx.Options(app.GRPCModule),
 		fx.Provide(app.NewGRPCServer),
 		fx.Provide(app.NewHTTPServer),
 		fx.Invoke(func(*grpc.Server) {}),

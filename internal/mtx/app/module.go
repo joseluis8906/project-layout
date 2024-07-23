@@ -12,18 +12,22 @@ import (
 	"go.uber.org/fx"
 )
 
-// Module exports the module for app.
-var Module = fx.Provide(
-	// infra
-	config.New,
-	log.New,
-	mongodb.New,
-	kafka.New,
-	nats.New,
+var (
+	InfraModule = fx.Provide(
+		config.New,
+		log.New,
+		mongodb.New,
+		kafka.New,
+		nats.New,
+	)
 
-	// repositories
-	account.NewRepository,
+	WorkerModule = fx.Provide()
 
-	// services
-	account.New,
+	RepoModule = fx.Provide(
+		account.NewRepository,
+	)
+
+	GRPCModule = fx.Provide(
+		account.New,
+	)
 )

@@ -39,7 +39,7 @@ type (
 	}
 )
 
-func GRPC(deps SvcDeps) *Service {
+func NewGRPC(deps SvcDeps) *Service {
 	s := &Service{
 		LogPrintf:       deps.Log.Printf,
 		RabbitMQPublish: deps.RabbitMQ.Publish,

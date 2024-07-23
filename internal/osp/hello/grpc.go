@@ -30,7 +30,7 @@ type (
 	}
 )
 
-func New(deps Deps) *Service {
+func NewGRPC(deps Deps) *Service {
 	s := &Service{
 		log:   deps.Log,
 		kafka: deps.Kafka,
