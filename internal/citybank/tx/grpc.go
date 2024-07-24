@@ -57,7 +57,7 @@ func (s *Service) Transfer(ctx context.Context, req *pb.TransferRequest) (*pb.Tr
 	txID := fmt.Sprintf("%d", time.Now().UnixMilli())
 	newTx := Tx{
 		ID:     txID,
-		Amount: money.New(req.Amount.Amount, req.Amount.Currency),
+		Amount: money.New(req.Amount.Value, req.Amount.Currency),
 		SrcAccount: Account{
 			Bank:   req.SrcAccount.Bank,
 			Type:   req.SrcAccount.Type,

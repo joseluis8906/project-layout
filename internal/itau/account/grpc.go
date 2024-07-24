@@ -57,7 +57,7 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 	newAccount := Account{
 		Type:    req.Type,
 		Number:  fmt.Sprintf("%d", time.Now().Unix()),
-		Balance: money.New(req.Balance.Amount, req.Balance.Currency),
+		Balance: money.New(req.Balance.Value, req.Balance.Currency),
 		Owner: Owner{
 			ID:       req.Owner.Id,
 			Email:    req.Owner.Email,
@@ -107,7 +107,7 @@ func (s *Service) CreditAccount(ctx context.Context, req *pb.CreditAccountReques
 		return nil, errors.New("account does not exist")
 	}
 
-	amount := money.New(req.Amount.Amount, req.Amount.Currency)
+	amount := money.New(req.Amount.Value, req.Amount.Currency)
 	if err := Credit(&account, amount); err != nil {
 		return nil, fmt.Errorf("crediting account: %w", err)
 	}

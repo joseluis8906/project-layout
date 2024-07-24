@@ -2,12 +2,22 @@ syntax = "proto3";
 
 package osp;
 
+import "finance.proto";
+
 option go_package = "github.com/joseluis8906/project-layout/internal/osp/pb";
 
 service OspService {
     rpc Tx(TxRequest) returns (TxResponse);
 }
 
-message TxRequest {}
+message TxRequest {
+    message Account {
+        string bank = 1;
+        string account = 2;
+    }
+    Account src = 1;
+    Account dst = 2;
+    company.Money amount = 3;
+}
 
 message TxResponse {}

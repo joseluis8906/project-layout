@@ -173,7 +173,7 @@ func (s *Worker) ProcessTransfer(d amqp.Delivery) {
 				Number: dstAccount.Number,
 			},
 			Amount: &pkgpb.Money{
-				Amount:   tx.Amount.Amount,
+				Value:    tx.Amount.Value,
 				Currency: tx.Amount.Currency,
 			},
 		},
