@@ -7,7 +7,6 @@ option go_package = "github.com/joseluis8906/project-layout/internal/citybank/pb
 
 service AccountService {
     rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
-    rpc CreditAccount(CreditAccountRequest) returns (CreditAccountResponse);
 }
 
 message CreateAccountRequest {
@@ -17,20 +16,12 @@ message CreateAccountRequest {
         string country = 3;
         string full_name = 4;
     }
-
     string type = 1;
     company.Money balance = 2;
     Owner owner = 3;
+    string verification_code = 4;
 }
 
 message CreateAccountResponse {
     string number = 1;
 }
-
-message CreditAccountRequest {
-    string type = 1;
-    string number = 2;
-    company.Money amount = 3;
-}
-
-message CreditAccountResponse {}

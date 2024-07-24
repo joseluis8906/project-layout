@@ -11,13 +11,16 @@ service OspService {
 }
 
 message TxRequest {
-    message Account {
+    message BankAccount {
         string bank = 1;
-        string account = 2;
+        string type = 2;
+        string number = 3;
     }
-    Account src = 1;
-    Account dst = 2;
+    BankAccount src = 1;
+    BankAccount dst = 2;
     company.Money amount = 3;
 }
 
-message TxResponse {}
+message TxResponse {
+    string id = 1;
+}

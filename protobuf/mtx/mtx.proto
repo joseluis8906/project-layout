@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package mtx;
 
+import "finance.proto";
 option go_package = "github.com/joseluis8906/project-layout/internal/mtx/pb";
 
 service AccountService {
@@ -20,22 +21,51 @@ message RegisterRequest {
     }
     string phone_number = 1;
     Owner owner = 2;
+    string pin = 3;
 }
 
 message RegisterResponse {}
 
-message PutMoneyRequest {}
+message PutMoneyRequest {
+    message BankAccount {
+        string bank = 1;
+        string type = 2;
+        string number = 3;
+    }
+    string phone_number = 1;
+    company.Money amount = 2;
+}
 
-message PutMoneyResponse {}
+message PutMoneyResponse {
+    string id = 1;
+}
 
-message SendMoneyRequest {}
+message SendMoneyRequest {
+    string src_phone_number = 1;
+    string dst_phone_number = 2;
+    company.Money amount = 3;
+    string pin = 4;
+}
 
-message SendMoneyResponse {}
+message SendMoneyResponse {
+    string status = 1;
+}
 
-message WithdrawRequest {}
+message WithdrawRequest {
+    string phone_number = 1;
+    company.Money amount = 2;
+    string pin = 3;
+}
 
-message WithdrawResponse {}
+message WithdrawResponse {
+    string status = 1;
+}
 
-message GetBalanceRequest {}
+message GetBalanceRequest {
+    string phone_number = 1;
+    string pin = 2;
+}
 
-message GetBalanceResponse {}
+message GetBalanceResponse {
+    company.Money balance = 1;
+}

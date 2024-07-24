@@ -20,7 +20,9 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	TxService_Transfer_FullMethodName      = "/citybank.TxService/Transfer"
-	TxService_CheckTxStatus_FullMethodName = "/citybank.TxService/CheckTxStatus"
+	TxService_CheckStatus_FullMethodName   = "/citybank.TxService/CheckStatus"
+	TxService_Withdraw_FullMethodName      = "/citybank.TxService/Withdraw"
+	TxService_DirectDeposit_FullMethodName = "/citybank.TxService/DirectDeposit"
 )
 
 // TxServiceClient is the client API for TxService service.
@@ -28,7 +30,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TxServiceClient interface {
 	Transfer(ctx context.Context, in *TransferRequest, opts ...grpc.CallOption) (*TransferResponse, error)
-	CheckTxStatus(ctx context.Context, in *CheckTxStatusRequest, opts ...grpc.CallOption) (*CheckTxStatusResponse, error)
+	CheckStatus(ctx context.Context, in *CheckStatusRequest, opts ...grpc.CallOption) (*CheckStatusResponse, error)
+	Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawResponse, error)
+	DirectDeposit(ctx context.Context, in *DirectDepositRequest, opts ...grpc.CallOption) (*DirectDepositResponse, error)
 }
 
 type txServiceClient struct {
@@ -48,9 +52,27 @@ func (c *txServiceClient) Transfer(ctx context.Context, in *TransferRequest, opt
 	return out, nil
 }
 
-func (c *txServiceClient) CheckTxStatus(ctx context.Context, in *CheckTxStatusRequest, opts ...grpc.CallOption) (*CheckTxStatusResponse, error) {
-	out := new(CheckTxStatusResponse)
-	err := c.cc.Invoke(ctx, TxService_CheckTxStatus_FullMethodName, in, out, opts...)
+func (c *txServiceClient) CheckStatus(ctx context.Context, in *CheckStatusRequest, opts ...grpc.CallOption) (*CheckStatusResponse, error) {
+	out := new(CheckStatusResponse)
+	err := c.cc.Invoke(ctx, TxService_CheckStatus_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *txServiceClient) Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawResponse, error) {
+	out := new(WithdrawResponse)
+	err := c.cc.Invoke(ctx, TxService_Withdraw_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *txServiceClient) DirectDeposit(ctx context.Context, in *DirectDepositRequest, opts ...grpc.CallOption) (*DirectDepositResponse, error) {
+	out := new(DirectDepositResponse)
+	err := c.cc.Invoke(ctx, TxService_DirectDeposit_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +84,9 @@ func (c *txServiceClient) CheckTxStatus(ctx context.Context, in *CheckTxStatusRe
 // for forward compatibility
 type TxServiceServer interface {
 	Transfer(context.Context, *TransferRequest) (*TransferResponse, error)
-	CheckTxStatus(context.Context, *CheckTxStatusRequest) (*CheckTxStatusResponse, error)
+	CheckStatus(context.Context, *CheckStatusRequest) (*CheckStatusResponse, error)
+	Withdraw(context.Context, *WithdrawRequest) (*WithdrawResponse, error)
+	DirectDeposit(context.Context, *DirectDepositRequest) (*DirectDepositResponse, error)
 	mustEmbedUnimplementedTxServiceServer()
 }
 
@@ -73,8 +97,14 @@ type UnimplementedTxServiceServer struct {
 func (UnimplementedTxServiceServer) Transfer(context.Context, *TransferRequest) (*TransferResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Transfer not implemented")
 }
-func (UnimplementedTxServiceServer) CheckTxStatus(context.Context, *CheckTxStatusRequest) (*CheckTxStatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CheckTxStatus not implemented")
+func (UnimplementedTxServiceServer) CheckStatus(context.Context, *CheckStatusRequest) (*CheckStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckStatus not implemented")
+}
+func (UnimplementedTxServiceServer) Withdraw(context.Context, *WithdrawRequest) (*WithdrawResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Withdraw not implemented")
+}
+func (UnimplementedTxServiceServer) DirectDeposit(context.Context, *DirectDepositRequest) (*DirectDepositResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DirectDeposit not implemented")
 }
 func (UnimplementedTxServiceServer) mustEmbedUnimplementedTxServiceServer() {}
 
@@ -107,20 +137,56 @@ func _TxService_Transfer_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TxService_CheckTxStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CheckTxStatusRequest)
+func _TxService_CheckStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TxServiceServer).CheckTxStatus(ctx, in)
+		return srv.(TxServiceServer).CheckStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TxService_CheckTxStatus_FullMethodName,
+		FullMethod: TxService_CheckStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TxServiceServer).CheckTxStatus(ctx, req.(*CheckTxStatusRequest))
+		return srv.(TxServiceServer).CheckStatus(ctx, req.(*CheckStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TxService_Withdraw_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WithdrawRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TxServiceServer).Withdraw(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TxService_Withdraw_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TxServiceServer).Withdraw(ctx, req.(*WithdrawRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TxService_DirectDeposit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DirectDepositRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TxServiceServer).DirectDeposit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TxService_DirectDeposit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TxServiceServer).DirectDeposit(ctx, req.(*DirectDepositRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -137,8 +203,16 @@ var TxService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TxService_Transfer_Handler,
 		},
 		{
-			MethodName: "CheckTxStatus",
-			Handler:    _TxService_CheckTxStatus_Handler,
+			MethodName: "CheckStatus",
+			Handler:    _TxService_CheckStatus_Handler,
+		},
+		{
+			MethodName: "Withdraw",
+			Handler:    _TxService_Withdraw_Handler,
+		},
+		{
+			MethodName: "DirectDeposit",
+			Handler:    _TxService_DirectDeposit_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
