@@ -1,6 +1,0 @@
-service: banking
-proto: banking.proto
-method: banking.BankService.VerifyTx
-headers:
-body:
-  code: 1234
