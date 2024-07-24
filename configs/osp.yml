@@ -16,7 +16,7 @@ nats:
   url: 'nats://layout.local:4222'
 kafka:
   bootstrap:
-    servers: 'layout.local:9092'
+    servers: 'layout.local:9093'
   acks: all
   group:
     id: osp

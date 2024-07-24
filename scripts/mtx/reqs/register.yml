@@ -3,8 +3,8 @@ proto: mtx.proto
 method: AccountService.Register
 headers:
 body:
-  phone_number: '+571234567890'
+  phone_number: '+570123456789'
   owner:
-    id: '1234567890'
+    id: '0123456789'
     email: john.doe@example.com
     full_name: John Doe

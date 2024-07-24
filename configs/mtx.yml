@@ -11,12 +11,12 @@ fluentd:
 grpc:
   port: 50051
 http:
-  addr: ':9090'
+  addr: ':9191'
 nats:
   url: 'nats://layout.local:4222'
 kafka:
   bootstrap:
-    servers: 'layout.local:9092'
+    servers: 'layout.local:9093'
   acks: all
   group:
     id: mtx
