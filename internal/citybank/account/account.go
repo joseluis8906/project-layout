@@ -71,11 +71,11 @@ func Debit(a *Account, amount money.Money) error {
 		return errors.New("different currencies")
 	}
 
+	if !money.GtOrEq(a.Balance, amount) {
+		return errors.New("insufficient balance")
+	}
+
 	v := money.Sub(a.Balance, amount)
 	a.Balance = v
 	return nil
-}
-
-func HasBalance(a Account, amount money.Money) bool {
-	return money.GtOrEq(a.Balance, amount)
 }

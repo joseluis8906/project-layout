@@ -29,9 +29,7 @@ var (
 		tx.NewRepository,
 	)
 
-	WorkerModule = fx.Provide(
-		tx.NewWorker,
-	)
+	WorkerModule = fx.Provide()
 
 	GRPCModule = fx.Provide(
 		account.NewGRPC,

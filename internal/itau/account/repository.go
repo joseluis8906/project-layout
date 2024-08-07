@@ -50,7 +50,7 @@ func (r *Repository) Persist(ctx context.Context, account Account) error {
 	return nil
 }
 
-func (r *Repository) Get(ctx context.Context, bank, aType, number string) (Account, error) {
+func (r *Repository) Get(ctx context.Context, aType, number string) (Account, error) {
 	_, span := otel.Start(ctx, otel.NoTracer, fmt.Sprintf("%s.AccountRepository/Get", app))
 	defer span.End()
 

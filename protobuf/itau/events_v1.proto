@@ -11,7 +11,17 @@ message Events_V1 {
         message Attributes {
             string type = 1;
             string number = 2;
-            string bank = 3;
+        }
+        string id = 1;
+        int64 occurred_on = 2;
+        Attributes attributes = 3;
+    }
+
+    message AccountDebited {
+        message Attributes {
+            string type = 1;
+            string number = 2;
+            company.Money amount = 3;
         }
         string id = 1;
         int64 occurred_on = 2;
@@ -22,27 +32,11 @@ message Events_V1 {
         message Attributes {
             string type = 1;
             string number = 2;
-            string amount = 3;
-            string bank = 4;
-        }
-        string id = 1;
-        int64 occurred_on = 2;
-        Attributes attributes = 3;
-    }
-
-    message TransferCompleted {
-        message Account {
-            string bank = 1;
-            string type = 2;
-            string number = 3;
-        }
-        message Attributes {
-            Account src_account = 1;
-            Account dst_account = 2;
             company.Money amount = 3;
         }
         string id = 1;
         int64 occurred_on = 2;
         Attributes attributes = 3;
     }
+    
 }

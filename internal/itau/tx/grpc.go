@@ -6,106 +6,126 @@ import (
 	"log"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
+	"github.com/google/uuid"
+	"go.uber.org/fx"
+
+	"github.com/joseluis8906/project-layout/internal/itau/account"
 	"github.com/joseluis8906/project-layout/internal/itau/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	"github.com/joseluis8906/project-layout/pkg/money"
-	"github.com/joseluis8906/project-layout/pkg/rabbitmq"
-
-	amqp "github.com/rabbitmq/amqp091-go"
-	"go.uber.org/fx"
-	"google.golang.org/protobuf/proto"
+	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
 )
 
 const (
-	app = "itau"
+	app                   = "itau"
+	creditedAccountsTopic = "itau.v1.creditedAccounts"
+	debitedAccountsTopic  = "itau.v1.debitedAccounts"
 )
 
 type (
 	SvcDeps struct {
 		fx.In
-		Log      *log.Logger
-		Kafka    *kafka.Conn
-		RabbitMQ *rabbitmq.Conn
-		TxRepo   *Repository
-		Worker   *Worker
+		Log         *log.Logger
+		Kafka       *kafka.Conn
+		AccountRepo *account.Repository
 	}
 
 	Service struct {
 		pb.UnimplementedTxServiceServer
-		LogPrintf       func(format string, v ...any)
-		RabbitMQPublish func(ctx context.Context, exchange, key string, mandatory, inmediate bool, msg amqp.Publishing) error
-		TxPersist       func(context.Context, Tx) error
-		TxGet           func(context.Context, string) (Tx, error)
+		LogPrintf      func(format string, v ...any)
+		AccountGet     func(ctx context.Context, atype, number string) (account.Account, error)
+		AccountPersist func(context.Context, account.Account) error
+		KafkaPublish   func(topic string, msg []byte) error
 	}
 )
 
 func NewGRPC(deps SvcDeps) *Service {
 	s := &Service{
-		LogPrintf:       deps.Log.Printf,
-		RabbitMQPublish: deps.RabbitMQ.Publish,
-		TxPersist:       deps.TxRepo.Persist,
-		TxGet:           deps.TxRepo.Get,
+		LogPrintf:      deps.Log.Printf,
+		AccountGet:     deps.AccountRepo.Get,
+		AccountPersist: deps.AccountRepo.Persist,
 	}
 
 	return s
 }
 
-func (s *Service) Transfer(ctx context.Context, req *pb.TransferRequest) (*pb.TransferResponse, error) {
-	tmCtx, cancelFn := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancelFn()
+func (s *Service) Witdraw(ctx context.Context, req *pb.WithdrawRequest) (*pb.WithdrawResponse, error) {
+	source, err := s.AccountGet(ctx, req.Account.Type, req.Account.Number)
+	if err != nil {
+		s.LogPrintf("getting %s %s: %w", source.Type, source.Number, err)
+		return nil, fmt.Errorf("getting %s %s: %w", req.Account.Type, req.Account.Number, err)
+	}
 
-	txID := fmt.Sprintf("%d", time.Now().UnixMilli())
-	newTx := Tx{
-		ID:     txID,
-		Amount: money.New(req.Amount.Value, req.Amount.Currency),
-		SrcAccount: Account{
-			Bank:   req.SrcAccount.Bank,
-			Type:   req.SrcAccount.Type,
-			Number: req.SrcAccount.Number,
+	amount := money.New(req.Amount.Value, req.Amount.Currency)
+	if err := account.Debit(&source, amount); err != nil {
+		s.LogPrintf("debiting %s %s: %w", source.Type, source.Number, err)
+		return nil, fmt.Errorf("debiting amount for %s %s: %w", source.Type, source.Number, err)
+	}
+
+	if err := s.AccountPersist(ctx, source); err != nil {
+		s.LogPrintf("persisting %s %s: %w", source.Type, source.Number, err)
+		return nil, fmt.Errorf("persisting %s %s: %w", source.Type, source.Number, err)
+	}
+
+	evt, err := proto.Marshal(&pb.Events_V1_AccountDebited{
+		Id:         uuid.New().String(),
+		OccurredOn: time.Now().UnixMilli(),
+		Attributes: &pb.Events_V1_AccountDebited_Attributes{
+			Type:   source.Type,
+			Number: source.Number,
+			Amount: &pkgpb.Money{Value: amount.Value, Currency: amount.Currency},
 		},
-		DstAccount: Account{
-			Bank:   req.DstAccount.Bank,
-			Type:   req.DstAccount.Type,
-			Number: req.DstAccount.Number,
-		},
-		Status: StatusPending,
-	}
-	if err := Validate(newTx); err != nil {
-		s.LogPrintf("validiting tx: %v", err)
-		return nil, err
-	}
-
-	if err := s.TxPersist(ctx, newTx); err != nil {
-		s.LogPrintf("persisting tx: %v", err)
-		return nil, err
-	}
-
-	data, err := proto.Marshal(&pb.TransferJob{
-		Id:         txID,
-		Amount:     req.Amount,
-		SrcAccount: req.SrcAccount,
-		DstAccount: req.DstAccount,
 	})
 	if err != nil {
-		s.LogPrintf("marshaling task: %v", err)
-		return nil, err
+		s.LogPrintf("marshaling event: %v", err)
+		return nil, fmt.Errorf("marshaling event: %w", err)
 	}
 
-	msg := amqp.Publishing{DeliveryMode: amqp.Persistent, Body: data}
-	if err := s.RabbitMQPublish(tmCtx, rabbitmq.NoExchange, transfersQueue, false, false, msg); err != nil {
-		s.LogPrintf("publishing message: %v", err)
-		return nil, err
+	if err := s.KafkaPublish(debitedAccountsTopic, evt); err != nil {
+		s.LogPrintf("publishing event: %v", err)
+		return nil, fmt.Errorf("publishing event: %w", err)
 	}
 
-	return &pb.TransferResponse{TxId: txID}, nil
+	return &pb.WithdrawResponse{Status: "success"}, nil
 }
 
-func (s *Service) CheckTxStatus(ctx context.Context, req *pb.CheckTxStatusRequest) (*pb.CheckTxStatusResponse, error) {
-	tx, err := s.TxGet(ctx, req.TxId)
+func (s *Service) DirectDeposit(ctx context.Context, req *pb.DirectDepositRequest) (*pb.DirectDepositResponse, error) {
+	dstAccount, err := s.AccountGet(ctx, req.Account.Type, req.Account.Number)
 	if err != nil {
-		s.LogPrintf("getting tx from repository: %v", err)
-		return nil, err
+		s.LogPrintf("getting %s %s: %w", req.Account.Type, req.Account.Number, err)
+		return nil, fmt.Errorf("getting %s %s: %w", req.Account.Type, req.Account.Number, err)
 	}
 
-	return &pb.CheckTxStatusResponse{Status: tx.Status}, nil
+	amount := money.New(req.Amount.Value, req.Amount.Currency)
+	if err := account.Credit(&dstAccount, amount); err != nil {
+		s.LogPrintf("crediting %s %s: %w", dstAccount.Type, dstAccount.Number, err)
+		return nil, fmt.Errorf("crediting %s %s: %w", dstAccount.Type, dstAccount.Number, err)
+	}
+
+	if err := s.AccountPersist(ctx, dstAccount); err != nil {
+		s.LogPrintf("persisting %s %s: %w", dstAccount.Type, dstAccount.Number, err)
+		return nil, fmt.Errorf("persisting %s %s: %w", dstAccount.Type, dstAccount.Number, err)
+	}
+
+	evt, err := proto.Marshal(&pb.Events_V1_AccountCredited{
+		Id:         uuid.New().String(),
+		OccurredOn: time.Now().UnixMilli(),
+		Attributes: &pb.Events_V1_AccountCredited_Attributes{
+			Type:   dstAccount.Type,
+			Number: dstAccount.Number,
+			Amount: &pkgpb.Money{Value: amount.Value, Currency: amount.Currency},
+		},
+	})
+	if err != nil {
+		s.LogPrintf("marshaling event: %v", err)
+		return nil, fmt.Errorf("marshaling event: %w", err)
+	}
+
+	if err := s.KafkaPublish(creditedAccountsTopic, evt); err != nil {
+		s.LogPrintf("publishing event: %v", err)
+		return nil, fmt.Errorf("publishing event: %w", err)
+	}
+
+	return &pb.DirectDepositResponse{Status: "success"}, nil
 }
