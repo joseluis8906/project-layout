@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function create() {
     echo "📢 following directories and files are gonna be created:"
@@ -90,19 +90,27 @@ function delete() {
         rm $FILE
     fi
 
-    sed -i "/# $SRV_NAME/d" ../Makefile
-    sed -i "/.PHONY: $SRV_NAME-build/d" ../Makefile
-    sed -i "/$SRV_NAME-build:/d" ../Makefile
-    sed -i "/@cd scripts\/$SRV_NAME && make build/d" ../Makefile
-    sed -i "/.PHONY: $SRV_NAME-run/d" ../Makefile
-    sed -i "/$SRV_NAME-run:/d" ../Makefile
-    sed -i "/@cd scripts\/$SRV_NAME && make run/d" ../Makefile
-    sed -i "/.PHONY: $SRV_NAME-debug/d" ../Makefile
-    sed -i "/$SRV_NAME-debug:/d" ../Makefile
-    sed -i "/@cd scripts\/$SRV_NAME && make debug/d" ../Makefile
-    sed -i '/^$/{N;/^\n$/d;}' ../Makefile
+    xsed -i "/# $SRV_NAME/d" ../Makefile
+    xsed -i "/.PHONY: $SRV_NAME-build/d" ../Makefile
+    xsed -i "/$SRV_NAME-build:/d" ../Makefile
+    xsed -i "/@cd scripts\/$SRV_NAME && make build/d" ../Makefile
+    xsed -i "/.PHONY: $SRV_NAME-run/d" ../Makefile
+    xsed -i "/$SRV_NAME-run:/d" ../Makefile
+    xsed -i "/@cd scripts\/$SRV_NAME && make run/d" ../Makefile
+    xsed -i "/.PHONY: $SRV_NAME-debug/d" ../Makefile
+    xsed -i "/$SRV_NAME-debug:/d" ../Makefile
+    xsed -i "/@cd scripts\/$SRV_NAME && make debug/d" ../Makefile
+    xsed -i '/^$/{N;/^\n$/d;}' ../Makefile
     echo "" >> ../Makefile
     gawk -i inplace '/./ { e=0 } /^$/ { e += 1 } e <= 1' ../Makefile
+}
+
+function xsed {
+    if command -v gsed > /dev/null 2>&1; then
+        gsed "$1" "$2" "$3"
+    else
+        sed "$1" "$2" "$3"
+    fi
 }
 
 function usage() {

@@ -66,6 +66,7 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 	}
 	if err := Validate(newAccount); err != nil {
 		log.Printf("validating account: %v", err)
+		// metrics.Inc(name)
 		return nil, fmt.Errorf("validating account owner: %w", err)
 	}
 

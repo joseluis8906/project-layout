@@ -7,14 +7,14 @@ services:
       - POSTGRES_USER=${INFRA_USER}
       - POSTGRES_PASSWORD=${INFRA_PASSWD}
       - POSTGRES_DB=layout
-    restart: always
+    restart: unless-stopped
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
   ferretdb:
     image: ghcr.io/ferretdb/ferretdb
     container_name: ferretdb
-    restart: always
+    restart: unless-stopped
     ports:
       - 27017:27017
     environment:
@@ -23,7 +23,7 @@ services:
   prometheus:
     image: docker.io/prom/prometheus
     container_name: prometheus
-    restart: always
+    restart: unless-stopped
     ports:
       - 9090:9090
     volumes:
@@ -37,12 +37,12 @@ services:
       - discovery.type=single-node
     volumes:
       - elastic-data:/usr/share/elasticsearch/data
-    restart: always 
+    restart: unless-stopped 
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.18
     container_name: kibana
-    restart: always
+    restart: unless-stopped
     environment:
       - SERVER_BASEPATH=/kibana
       - SERVER_REWRITEBASEPATH=true
@@ -57,7 +57,7 @@ services:
   jaeger:
     image: docker.io/jaegertracing/all-in-one:1.56
     container_name: jaeger
-    restart: always
+    restart: unless-stopped
     environment:
       - QUERY_BASE_PATH=/jaeger
     labels:
@@ -71,7 +71,7 @@ services:
   grafana:
     image: docker.io/grafana/grafana
     container_name: grafana
-    restart: always
+    restart: unless-stopped
     volumes:
       - grafana-data:/var/lib/grafana
     environment:
@@ -93,7 +93,7 @@ services:
   fluentd:
     build: ./fluentd
     container_name: fluentd
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
     ports:
@@ -103,14 +103,14 @@ services:
   nats:
     image: docker.io/nats:linux
     container_name: nats
-    restart: always
+    restart: unless-stopped
     ports:
       - 4222:4222
 
   etcd:
     image: docker.io/bitnami/etcd
     container_name: etcd
-    restart: always
+    restart: unless-stopped
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
       - ETCDCTL_API=2
@@ -129,19 +129,19 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - caddy-data:/data
-    restart: always
+    restart: unless-stopped
 
   redis:
     image: docker.io/redis
     container_name: redis
-    restart: always
+    restart: unless-stopped
     ports:
       - 6379:6379
 
   zookeeper:
     image: docker.io/bitnami/zookeeper:3.8
     container_name: zookeeper
-    restart: always
+    restart: unless-stopped
     ports:
       - "2181:2181"
     volumes:
@@ -152,7 +152,7 @@ services:
   kafka:
     image: docker.io/bitnami/kafka:3.3
     container_name: kafka
-    restart: always
+    restart: unless-stopped
     ports:
       - "9093:9093"
       - "9092:9092"
@@ -172,7 +172,7 @@ services:
   rabbitmq:
     image: docker.io/rabbitmq:3.13.3-management-alpine
     container_name: rabbitmq
-    restart: always
+    restart: unless-stopped
     ports:
       - "15672:15672"
       - "5672:5672"
