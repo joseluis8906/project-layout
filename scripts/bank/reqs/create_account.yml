@@ -1,0 +1,14 @@
+service: bank
+proto: account.proto
+method: AccountService.CreateAccount
+headers:
+body:
+  type: saving account
+  balance:
+    value: 50000
+    currency: COP
+  owner:
+    id: '0123456789'
+    country: CO
+    email: john.doe@example.com
+    full_name: John Doe

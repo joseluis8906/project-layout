@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package bank;
+
+import "finance.proto";
+option go_package = "github.com/joseluis8906/project-layout/internal/bank/pb";
+
+service TxService {
+    rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
+    rpc DirectDeposit(DirectDepositRequest) returns (DirectDepositResponse);
+}
+
+message TxAccount {
+    string type = 1;
+    string number = 2;
+}
+
+message WithdrawRequest {
+    TxAccount account = 1;
+    company.Money amount = 2;
+}
+message WithdrawResponse {
+    string status = 1;
+}
+
+message DirectDepositRequest {
+    TxAccount account = 1;
+    company.Money amount = 2;
+}
+message DirectDepositResponse {
+    string status = 1;
+}

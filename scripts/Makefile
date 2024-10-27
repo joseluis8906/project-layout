@@ -26,20 +26,6 @@ osp-run:
 .PHONY: osp-debug
 osp-debug:
 	@cd scripts/osp && make debug
-
-# itau
-.PHONY: itau-build
-itau-build:
-	@cd scripts/itau && make build
-
-.PHONY: itau-run
-itau-run:
-	@cd scripts/itau && make run
-
-.PHONY: itau-debug
-itau-debug:
-	@cd scripts/itau && make debug
-
 # citybank
 .PHONY: citybank-build
 citybank-build:
@@ -52,4 +38,17 @@ citybank-run:
 .PHONY: citybank-debug
 citybank-debug:
 	@cd scripts/citybank && make debug
+
+# bank
+.PHONY: bank-build
+bank-build:
+	@cd scripts/bank && make build
+
+.PHONY: bank-run
+bank-run:
+	@cd scripts/bank && make run
+
+.PHONY: bank-debug
+bank-debug:
+	@cd scripts/bank && make debug
 

@@ -1,0 +1,10 @@
+service: bank
+proto: account.proto
+method: AccountService.CreditAccount
+headers:
+body:
+  type: saving account
+  number: '1719622067'
+  amount:
+    amount: 100000
+    currency: COP

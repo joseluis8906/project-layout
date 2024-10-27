@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package bank;
+
+import "finance.proto";
+option go_package = "github.com/joseluis8906/project-layout/internal/bank/pb";
+
+service AccountService {
+    rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+}
+
+message CreateAccountRequest {
+    message Owner {
+        string id = 1;
+        string email = 2;
+        string country = 3;
+        string full_name = 4;
+    }
+    string type = 1;
+    company.Money balance = 2;
+    Owner owner = 3;
+}
+
+message CreateAccountResponse {
+    string number = 1;
+}

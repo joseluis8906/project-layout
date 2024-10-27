@@ -1,0 +1,6 @@
+service: bank 
+proto: tx.proto
+method: BankService.VerifyTx
+headers:
+body:
+  code: 1234

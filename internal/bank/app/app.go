@@ -8,9 +8,9 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/joseluis8906/project-layout/internal/citybank/account"
-	"github.com/joseluis8906/project-layout/internal/citybank/pb"
-	"github.com/joseluis8906/project-layout/internal/citybank/tx"
+	"github.com/joseluis8906/project-layout/internal/bank/account"
+	"github.com/joseluis8906/project-layout/internal/bank/pb"
+	"github.com/joseluis8906/project-layout/internal/bank/tx"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"

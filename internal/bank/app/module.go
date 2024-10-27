@@ -1,7 +1,9 @@
 package app
 
 import (
-	"github.com/joseluis8906/project-layout/internal/osp/config"
+	"github.com/joseluis8906/project-layout/internal/bank/account"
+	"github.com/joseluis8906/project-layout/internal/bank/config"
+	"github.com/joseluis8906/project-layout/internal/bank/tx"
 
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	"github.com/joseluis8906/project-layout/pkg/log"
@@ -20,11 +22,15 @@ var (
 		nats.New,
 	)
 
-	RepoModule = fx.Provide()
+	RepoModule = fx.Provide(
+		account.NewRepository,
+		tx.NewRepository,
+	)
 
 	WorkerModule = fx.Provide()
 
 	GRPCModule = fx.Provide(
-	// hello.NewGRPC,
+		account.NewGRPC,
+		tx.NewGRPC,
 	)
 )
