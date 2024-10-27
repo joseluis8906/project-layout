@@ -6,8 +6,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/joseluis8906/project-layout/internal/bank/account/acctmetric"
 	"github.com/joseluis8906/project-layout/internal/bank/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
+	"github.com/joseluis8906/project-layout/pkg/metric"
+	"github.com/joseluis8906/project-layout/pkg/metric/metrictag"
 	"github.com/joseluis8906/project-layout/pkg/money"
 
 	"github.com/google/uuid"
@@ -44,10 +47,25 @@ func NewGRPC(deps SvcDeps) *Service {
 		AccountGet:     deps.AccountRepo.Get,
 	}
 
+	metric.Register(
+		metric.Counter,
+		acctmetric.GRPCCreateAccount,
+		"How many gRPC requests complete on success and how many on failure state",
+		metrictag.Result,
+	)
+
 	return s
 }
 
-func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
+func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (res *pb.CreateAccountResponse, err error) {
+	defer func() {
+		if err != nil {
+			metric.Inc(metric.Counter, acctmetric.GRPCCreateAccount, metric.Tag(metrictag.Result, metrictag.Failure))
+		} else {
+			metric.Inc(metric.Counter, acctmetric.GRPCCreateAccount, metric.Tag(metrictag.Result, metrictag.Success))
+		}
+	}()
+
 	newAccount := Account{
 		Type:    req.Type,
 		Number:  fmt.Sprintf("%d", time.Now().Unix()),
@@ -59,12 +77,12 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 			FullName: req.Owner.FullName,
 		},
 	}
-	if err := Validate(newAccount); err != nil {
+	if err = Validate(newAccount); err != nil {
 		s.LogPrintf("validating account: %v", err)
 		return nil, fmt.Errorf("validating account owner: %w", err)
 	}
 
-	err := s.AccountPersist(ctx, newAccount)
+	err = s.AccountPersist(ctx, newAccount)
 	if err != nil {
 		s.LogPrintf("adding account: %v", err)
 		return nil, fmt.Errorf("adding account: %w", err)
