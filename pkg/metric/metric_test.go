@@ -1,6 +1,7 @@
 package metric_test
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/joseluis8906/project-layout/pkg/metric"
@@ -21,8 +22,7 @@ func ExampleRegister() {
 		metric.Counter,
 		HttpRequestsTotal,
 		"How many HTTP requests processed, partitioned by status code and HTTP method.",
-		HttpCode,
-		HttpMethod,
+		[]string{HttpCode, HttpMethod},
 	)
 	if err != nil {
 		// do handle the error
@@ -32,6 +32,7 @@ func ExampleRegister() {
 		metric.Gauge,
 		BlobStorageOpsQueued,
 		"Number of blob storage operations waiting to be processed",
+		nil,
 	)
 	if err != nil {
 		// do handle the error
@@ -39,23 +40,16 @@ func ExampleRegister() {
 }
 
 func ExampleInc() {
-	err := metric.Inc(
+	metric.Inc(
 		metric.Counter,
 		HttpRequestsTotal,
-		metric.Tag(HttpCode, http.StatusNotFound),
+		metric.Tag(HttpCode, fmt.Sprintf("%d", http.StatusNotFound)),
 		metric.Tag(HttpMethod, http.MethodPost),
 	)
-	if err != nil {
-		// do handle error
-	}
 
-	if err := metric.Inc(metric.Gauge, BlobStorageOpsQueued); err != nil {
-		// do handle error
-	}
+	metric.Inc(metric.Gauge, BlobStorageOpsQueued)
 }
 
 func ExampleDec() {
-	if err := metric.Dec(metric.Gauge, BlobStorageOpsQueued); err != nil {
-		// do handle error
-	}
+	metric.Dec(metric.Gauge, BlobStorageOpsQueued)
 }

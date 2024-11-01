@@ -78,6 +78,10 @@ func (l *Logger) Write(data []byte) (int, error) {
 	return len(data), l.conn.Post(l.tag, structured)
 }
 
+func Noop() *log.Logger {
+	return log.New(io.Discard, "", log.LstdFlags)
+}
+
 func New(deps Deps) *log.Logger {
 	fluentd, err := fluent.New(fluent.Config{
 		FluentHost:    deps.Config.GetString("fluentd.host"),

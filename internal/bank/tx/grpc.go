@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	app                   = "bank"
 	creditedAccountsTopic = "bank.v1.creditedAccounts"
 	debitedAccountsTopic  = "bank.v1.debitedAccounts"
 )
@@ -29,23 +28,26 @@ type (
 		Log         *log.Logger
 		Kafka       *kafka.Conn
 		AccountRepo *account.Repository
+		TxRepo      *Repository
 	}
 
 	Service struct {
 		pb.UnimplementedTxServiceServer
-		LogPrintf      func(format string, v ...any)
-		AccountGet     func(ctx context.Context, atype, number string) (account.Account, error)
+		log            *log.Logger
+		kafka          *kafka.Conn
+		AccountGet     func(ctx context.Context, kind, number string) (account.Account, error)
 		AccountPersist func(context.Context, account.Account) error
-		KafkaPublish   func(topic string, msg []byte) error
+		TxPersist      func(context.Context, Tx) error
 	}
 )
 
 func NewGRPC(deps SvcDeps) *Service {
 	s := &Service{
-		LogPrintf:      deps.Log.Printf,
+		log:            deps.Log,
+		kafka:          deps.Kafka,
 		AccountGet:     deps.AccountRepo.Get,
 		AccountPersist: deps.AccountRepo.Persist,
-		KafkaPublish:   deps.Kafka.Publish,
+		TxPersist:      deps.TxRepo.Persist,
 	}
 
 	return s
@@ -54,18 +56,18 @@ func NewGRPC(deps SvcDeps) *Service {
 func (s *Service) Witdraw(ctx context.Context, req *pb.WithdrawRequest) (*pb.WithdrawResponse, error) {
 	source, err := s.AccountGet(ctx, req.Account.Type, req.Account.Number)
 	if err != nil {
-		s.LogPrintf("getting %s %s: %w", source.Type, source.Number, err)
+		s.log.Printf("getting %s %s: %v", source.Type, source.Number, err)
 		return nil, fmt.Errorf("getting %s %s: %w", req.Account.Type, req.Account.Number, err)
 	}
 
 	amount := money.New(req.Amount.Value, req.Amount.Currency)
 	if err := account.Debit(&source, amount); err != nil {
-		s.LogPrintf("debiting %s %s: %w", source.Type, source.Number, err)
+		s.log.Printf("debiting %s %s: %v", source.Type, source.Number, err)
 		return nil, fmt.Errorf("debiting amount for %s %s: %w", source.Type, source.Number, err)
 	}
 
 	if err := s.AccountPersist(ctx, source); err != nil {
-		s.LogPrintf("persisting %s %s: %w", source.Type, source.Number, err)
+		s.log.Printf("persisting %s %s: %v", source.Type, source.Number, err)
 		return nil, fmt.Errorf("persisting %s %s: %w", source.Type, source.Number, err)
 	}
 
@@ -79,12 +81,12 @@ func (s *Service) Witdraw(ctx context.Context, req *pb.WithdrawRequest) (*pb.Wit
 		},
 	})
 	if err != nil {
-		s.LogPrintf("marshaling event: %v", err)
+		s.log.Printf("marshaling event: %v", err)
 		return nil, fmt.Errorf("marshaling event: %w", err)
 	}
 
-	if err := s.KafkaPublish(debitedAccountsTopic, evt); err != nil {
-		s.LogPrintf("publishing event: %v", err)
+	if err := s.kafka.Publish(debitedAccountsTopic, evt); err != nil {
+		s.log.Printf("publishing event: %v", err)
 		return nil, fmt.Errorf("publishing event: %w", err)
 	}
 
@@ -103,7 +105,7 @@ func (s *Service) DirectDeposit(ctx context.Context, req *pb.DirectDepositReques
 	}
 
 	if err := s.AccountPersist(ctx, destintaion); err != nil {
-		s.LogPrintf("persisting %s %s: %w", destintaion.Type, destintaion.Number, err)
+		s.log.Printf("persisting %s %s: %v", destintaion.Type, destintaion.Number, err)
 		return nil, fmt.Errorf("persisting %s %s: %w", destintaion.Type, destintaion.Number, err)
 	}
 
@@ -117,12 +119,12 @@ func (s *Service) DirectDeposit(ctx context.Context, req *pb.DirectDepositReques
 		},
 	})
 	if err != nil {
-		s.LogPrintf("marshaling event: %v", err)
+		s.log.Printf("marshaling event: %v", err)
 		return nil, fmt.Errorf("marshaling event: %w", err)
 	}
 
-	if err := s.KafkaPublish(creditedAccountsTopic, evt); err != nil {
-		s.LogPrintf("publishing event: %v", err)
+	if err := s.kafka.Publish(creditedAccountsTopic, evt); err != nil {
+		s.log.Printf("publishing event: %v", err)
 		return nil, fmt.Errorf("publishing event: %w", err)
 	}
 

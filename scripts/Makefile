@@ -26,18 +26,6 @@ osp-run:
 .PHONY: osp-debug
 osp-debug:
 	@cd scripts/osp && make debug
-# citybank
-.PHONY: citybank-build
-citybank-build:
-	@cd scripts/citybank && make build
-
-.PHONY: citybank-run
-citybank-run:
-	@cd scripts/citybank && make run
-
-.PHONY: citybank-debug
-citybank-debug:
-	@cd scripts/citybank && make debug
 
 # bank
 .PHONY: bank-build

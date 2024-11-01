@@ -8,17 +8,22 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/joseluis8906/project-layout/internal/bank/account"
 	"github.com/joseluis8906/project-layout/internal/bank/pb"
+	"github.com/joseluis8906/project-layout/pkg/kafka"
+	"github.com/joseluis8906/project-layout/pkg/log"
+	"github.com/joseluis8906/project-layout/pkg/metric"
 	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
 )
 
 func TestService_CreateAccount(t *testing.T) {
-	svc := account.Service{
-		LogPrintf:      func(format string, v ...any) {},
-		KafkaPublish:   func(topic string, msg []byte) error { return nil },
-		AccountPersist: func(ctx context.Context, a account.Account) error { return nil },
-		AccountGet: func(ctx context.Context, atype, number string) (account.Account, error) {
-			return account.Account{}, nil
-		},
+	svc := account.NewGRPC(account.SvcDeps{
+		Log:    log.Noop(),
+		Metric: metric.Noop(),
+		Kafka:  kafka.Noop(),
+	})
+
+	svc.AccountPersist = func(ctx context.Context, a account.Account) error { return nil }
+	svc.AccountGet = func(ctx context.Context, atype, number string) (account.Account, error) {
+		return account.Account{}, nil
 	}
 
 	input := &pb.CreateAccountRequest{

@@ -24,6 +24,7 @@ type (
 		consumer  *kafka.Consumer
 		producer  *kafka.Producer
 		consumers map[string][]consumerFunc
+		isNoop    bool
 	}
 
 	consumerFunc   = func(*kafka.Message)
@@ -80,6 +81,10 @@ func (c *Conn) Run(ctx context.Context) {
 }
 
 func (c *Conn) Subscribe(topic string, consumer consumerFunc) {
+	if c.isNoop {
+		return
+	}
+
 	if c.consumers == nil {
 		c.consumers = map[string][]consumerFunc{}
 	}
@@ -88,6 +93,10 @@ func (c *Conn) Subscribe(topic string, consumer consumerFunc) {
 }
 
 func (c *Conn) Publish(topic string, msg []byte) error {
+	if c.isNoop {
+		return nil
+	}
+
 	return c.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Value:          msg,
@@ -138,4 +147,8 @@ func New(lc fx.Lifecycle, deps Deps) *Conn {
 	})
 
 	return conn
+}
+
+func Noop() *Conn {
+	return &Conn{isNoop: true}
 }

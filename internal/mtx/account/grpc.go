@@ -3,12 +3,13 @@ package account
 import (
 	"context"
 	"fmt"
-	"log"
+	stdlog "log"
 	"time"
 
 	"github.com/joseluis8906/project-layout/internal/mtx/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
-	pkglog "github.com/joseluis8906/project-layout/pkg/log"
+	"github.com/joseluis8906/project-layout/pkg/log"
+	"github.com/joseluis8906/project-layout/pkg/metric"
 	"github.com/joseluis8906/project-layout/pkg/money"
 	"github.com/joseluis8906/project-layout/pkg/otel"
 	pkgpb "github.com/joseluis8906/project-layout/pkg/pb"
@@ -20,21 +21,24 @@ import (
 type (
 	Deps struct {
 		fx.In
-		Log         *log.Logger
+		Log         *stdlog.Logger
 		Kafka       *kafka.Conn
+		Metric      *metric.Collector
 		AccountRepo *Repository
 	}
 
 	Service struct {
 		pb.UnimplementedAccountServiceServer
-		LogPrintf      func(format string, v ...any)
+		metric         *metric.Collector
+		log            *stdlog.Logger
 		AccountPersist func(context.Context, Account) error
 	}
 )
 
 func New(deps Deps) *Service {
 	s := &Service{
-		LogPrintf:      deps.Log.Printf,
+		log:            deps.Log,
+		metric:         deps.Metric,
 		AccountPersist: deps.AccountRepo.Persist,
 	}
 
@@ -42,7 +46,11 @@ func New(deps Deps) *Service {
 	return s
 }
 
-func (s *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+func (s *Service) Register(ctx context.Context, req *pb.RegisterRequest) (res *pb.RegisterResponse, err error) {
+	defer func() {
+		s.metric.OpsResult(err, metric.Tag(metric.ServiceTagKey, "account"), metric.Tag(metric.MethodTagKey, "CreateAccount"))
+	}()
+
 	newAccount := Account{
 		PhoneNumber: req.PhoneNumber,
 		Balance:     money.New(0, money.COP),
@@ -52,13 +60,13 @@ func (s *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Re
 			FullName: req.Owner.FullName,
 		},
 	}
-	if err := Validate(newAccount); err != nil {
-		s.LogPrintf("validating account: %v", err)
+	if err = Validate(newAccount); err != nil {
+		s.log.Printf("validating account: %v", err)
 		return nil, fmt.Errorf("validating account: %w", err)
 	}
 
 	if err := s.AccountPersist(ctx, newAccount); err != nil {
-		s.LogPrintf("persisting account: %v", err)
+		s.log.Printf("persisting account: %v", err)
 		return nil, fmt.Errorf("persisting account: %w", err)
 	}
 
@@ -72,9 +80,9 @@ func (s *Service) OnTested(msg *kafka.Message) {
 	var evt pkgpb.V1_Tested
 	err := proto.Unmarshal(msg.Value, &evt)
 	if err != nil {
-		s.LogPrintf("unmarshaling event: %v", err)
+		s.log.Printf("unmarshaling event: %v", err)
 		return
 	}
 
-	s.LogPrintf(pkglog.Info(`msg received: {"id": %s, "occurred_on": %s, "msg": %s}`), evt.Id, time.UnixMilli(evt.OccurredOn), evt.Msg)
+	s.log.Printf(log.Info(`msg received: {"id": %s, "occurred_on": %s, "msg": %s}`), evt.Id, time.UnixMilli(evt.OccurredOn), evt.Msg)
 }

@@ -2,6 +2,7 @@ package account
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 
 	"github.com/joseluis8906/project-layout/pkg/money"
@@ -45,7 +46,7 @@ func Validate(a Account) error {
 	validCountry := regexp.MustCompile(`^(CO|MX|EC)$`)
 	validType := regexp.MustCompile(`^(saving account|current account)$`)
 	if !validType.MatchString(a.Type) {
-		return errors.New("invalid account type")
+		return fmt.Errorf("invalid account type %q", a.Type)
 	}
 
 	if !validID.MatchString(a.Owner.ID) {
@@ -61,7 +62,7 @@ func Validate(a Account) error {
 	}
 
 	if !validCountry.MatchString(a.Owner.Country) {
-		return errors.New("invalid owner's country")
+		return fmt.Errorf("invalid owner's country %q", a.Owner.Country)
 	}
 
 	return nil

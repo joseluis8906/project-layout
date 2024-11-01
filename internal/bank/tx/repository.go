@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/joseluis8906/project-layout/pkg/otel"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -14,6 +15,7 @@ import (
 type (
 	RepoDeps struct {
 		fx.In
+		Conf    *viper.Viper
 		MongoDB *mongo.Client
 	}
 
@@ -23,7 +25,7 @@ type (
 )
 
 func NewRepository(deps RepoDeps) *Repository {
-	db := deps.MongoDB.Database(app).Collection("txs")
+	db := deps.MongoDB.Database(deps.Conf.GetString("app.name")).Collection("txs")
 	db.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "id", Value: -1}},
 		Options: options.Index().SetUnique(true),
@@ -35,7 +37,7 @@ func NewRepository(deps RepoDeps) *Repository {
 }
 
 func (r *Repository) Persist(ctx context.Context, tx Tx) error {
-	_, span := otel.Start(ctx, otel.NoTracer, fmt.Sprintf("%s.TxRepository/Persist", app))
+	_, span := otel.Start(ctx, otel.NoTracer, "bank.TxRepository/Persist")
 	defer span.End()
 
 	filter := bson.D{{Key: "id", Value: tx.ID}}
@@ -48,7 +50,7 @@ func (r *Repository) Persist(ctx context.Context, tx Tx) error {
 }
 
 func (r *Repository) Get(ctx context.Context, id string) (Tx, error) {
-	_, span := otel.Start(ctx, otel.NoTracer, fmt.Sprintf("%s.TxRepository/Get", app))
+	_, span := otel.Start(ctx, otel.NoTracer, "bank.TxRepository/Get")
 	defer span.End()
 
 	filter := bson.D{{Key: "id", Value: id}}

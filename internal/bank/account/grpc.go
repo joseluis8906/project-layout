@@ -6,11 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/joseluis8906/project-layout/internal/bank/account/acctmetric"
 	"github.com/joseluis8906/project-layout/internal/bank/pb"
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	"github.com/joseluis8906/project-layout/pkg/metric"
-	"github.com/joseluis8906/project-layout/pkg/metric/metrictag"
 	"github.com/joseluis8906/project-layout/pkg/money"
 
 	"github.com/google/uuid"
@@ -22,14 +20,16 @@ type (
 	SvcDeps struct {
 		fx.In
 		Log         *log.Logger
+		Metric      *metric.Collector
 		Kafka       *kafka.Conn
 		AccountRepo *Repository
 	}
 
 	Service struct {
 		pb.UnimplementedAccountServiceServer
-		LogPrintf      func(format string, v ...any)
-		KafkaPublish   func(topic string, msg []byte) error
+		log            *log.Logger
+		metric         *metric.Collector
+		kafka          *kafka.Conn
 		AccountPersist func(context.Context, Account) error
 		AccountGet     func(ctx context.Context, atype, number string) (Account, error)
 	}
@@ -41,29 +41,19 @@ const (
 
 func NewGRPC(deps SvcDeps) *Service {
 	s := &Service{
-		LogPrintf:      deps.Log.Printf,
-		KafkaPublish:   deps.Kafka.Publish,
+		log:            deps.Log,
+		metric:         deps.Metric,
+		kafka:          deps.Kafka,
 		AccountPersist: deps.AccountRepo.Persist,
 		AccountGet:     deps.AccountRepo.Get,
 	}
-
-	metric.Register(
-		metric.Counter,
-		acctmetric.GRPCCreateAccount,
-		"How many gRPC requests complete on success and how many on failure state",
-		metrictag.Result,
-	)
 
 	return s
 }
 
 func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (res *pb.CreateAccountResponse, err error) {
 	defer func() {
-		if err != nil {
-			metric.Inc(metric.Counter, acctmetric.GRPCCreateAccount, metric.Tag(metrictag.Result, metrictag.Failure))
-		} else {
-			metric.Inc(metric.Counter, acctmetric.GRPCCreateAccount, metric.Tag(metrictag.Result, metrictag.Success))
-		}
+		s.metric.OpsResult(err, metric.Tag(metric.ServiceTagKey, "bank.AccountService"), metric.Tag(metric.MethodTagKey, "CreateAccount"))
 	}()
 
 	newAccount := Account{
@@ -78,13 +68,13 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 		},
 	}
 	if err = Validate(newAccount); err != nil {
-		s.LogPrintf("validating account: %v", err)
+		s.log.Printf("validating account: %v", err)
 		return nil, fmt.Errorf("validating account owner: %w", err)
 	}
 
 	err = s.AccountPersist(ctx, newAccount)
 	if err != nil {
-		s.LogPrintf("adding account: %v", err)
+		s.log.Printf("adding account: %v", err)
 		return nil, fmt.Errorf("adding account: %w", err)
 	}
 
@@ -97,12 +87,12 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 		},
 	})
 	if err != nil {
-		s.LogPrintf("marshaling event: %v", err)
+		s.log.Printf("marshaling event: %v", err)
 		return nil, fmt.Errorf("marshaling event: %w", err)
 	}
 
-	if err := s.KafkaPublish(createdAccountsTopic, evt); err != nil {
-		s.LogPrintf("publishing event: %v", err)
+	if err := s.kafka.Publish(createdAccountsTopic, evt); err != nil {
+		s.log.Printf("publishing event: %v", err)
 		return nil, fmt.Errorf("publishing event: %w", err)
 	}
 

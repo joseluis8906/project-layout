@@ -25,7 +25,7 @@ type (
 )
 
 func NewRepository(deps RepoDeps) *Repository {
-	db := deps.Mongodb.Database(deps.Conf.GetString("app")).Collection("accounts")
+	db := deps.Mongodb.Database(deps.Conf.GetString("app.name")).Collection("accounts")
 	db.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "type", Value: -1}, {Key: "number", Value: -1}},
 		Options: options.Index().SetUnique(true),
