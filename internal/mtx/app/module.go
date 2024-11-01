@@ -6,6 +6,7 @@ import (
 
 	"github.com/joseluis8906/project-layout/pkg/kafka"
 	"github.com/joseluis8906/project-layout/pkg/log"
+	"github.com/joseluis8906/project-layout/pkg/metric"
 	"github.com/joseluis8906/project-layout/pkg/mongodb"
 	"github.com/joseluis8906/project-layout/pkg/nats"
 
@@ -16,18 +17,19 @@ var (
 	InfraModule = fx.Provide(
 		config.New,
 		log.New,
+		metric.New,
 		mongodb.New,
 		kafka.New,
 		nats.New,
 	)
-
-	WorkerModule = fx.Provide()
 
 	RepoModule = fx.Provide(
 		account.NewRepository,
 	)
 
 	GRPCModule = fx.Provide(
-		account.New,
+		account.NewGRPC,
 	)
+
+	WorkerModule = fx.Provide()
 )

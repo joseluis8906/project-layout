@@ -2,6 +2,7 @@ package account
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 
 	"github.com/joseluis8906/project-layout/pkg/money"
@@ -27,7 +28,7 @@ func Validate(a Account) error {
 	validEmail := regexp.MustCompile(`^[\w]+.*@[\w]+.(com|net|org)`)
 	validName := regexp.MustCompile(`^[\w]{2,} [\w]{2,}$`)
 	if !validPhone.MatchString(a.PhoneNumber) {
-		return errors.New("invalid phone")
+		return fmt.Errorf("invalid phone number %q", a.PhoneNumber)
 	}
 
 	if !validID.MatchString(a.Owner.ID) {

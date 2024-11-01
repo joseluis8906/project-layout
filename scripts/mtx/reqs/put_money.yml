@@ -1,13 +1,12 @@
 service: mtx 
 proto: mtx.proto
-method: MtxService.PutMoney
+method: AccountService.PutMoney
 headers:
 body:
-  phone_number: +571234567890
+  phone_number: '+571234567890'
   amount:
-    amount: 5000000
+    value: 5000000
     currency: COP
   bank:
-    name: itau
     type: saving account
-    account: 1234567890
+    number: '1234567890'

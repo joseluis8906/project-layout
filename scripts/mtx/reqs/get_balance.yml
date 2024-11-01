@@ -1,6 +1,6 @@
 service: mtx 
 proto: mtx.proto
-method: MtxService.GetBalance
+method: AccountService.GetBalance
 headers:
 body:
-  phone_number: +571234567890
+  phone_number: '+571234567890'

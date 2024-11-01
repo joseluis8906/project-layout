@@ -9,6 +9,6 @@ body:
     currency: COP
   owner:
     id: '0123456789'
-    country: US
+    country: CO
     email: john.doe@example.com
     full_name: John Doe

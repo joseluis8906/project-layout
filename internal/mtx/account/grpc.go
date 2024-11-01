@@ -35,7 +35,7 @@ type (
 	}
 )
 
-func New(deps Deps) *Service {
+func NewGRPC(deps Deps) *Service {
 	s := &Service{
 		log:            deps.Log,
 		metric:         deps.Metric,
@@ -48,7 +48,7 @@ func New(deps Deps) *Service {
 
 func (s *Service) Register(ctx context.Context, req *pb.RegisterRequest) (res *pb.RegisterResponse, err error) {
 	defer func() {
-		s.metric.OpsResult(err, metric.Tag(metric.ServiceTagKey, "account"), metric.Tag(metric.MethodTagKey, "CreateAccount"))
+		s.metric.OpsResult(err, metric.Tag(metric.ServiceTagKey, "mtx.AccountService"), metric.Tag(metric.MethodTagKey, "Register"))
 	}()
 
 	newAccount := Account{
@@ -71,6 +71,38 @@ func (s *Service) Register(ctx context.Context, req *pb.RegisterRequest) (res *p
 	}
 
 	return &pb.RegisterResponse{}, nil
+}
+
+func (s *Service) PutMoney(ctx context.Context, req *pb.PutMoneyRequest) (res *pb.PutMoneyResponse, err error) {
+	defer func() {
+		s.metric.OpsResult(err, metric.Tag(metric.ServiceTagKey, "mtx.AccountService"), metric.Tag(metric.MethodTagKey, "PutMoney"))
+	}()
+
+	return &pb.PutMoneyResponse{Id: "testing"}, nil
+}
+
+func (s *Service) SendMoney(ctx context.Context, req *pb.SendMoneyRequest) (res *pb.SendMoneyResponse, err error) {
+	defer func() {
+		s.metric.OpsResult(err, metric.Tag(metric.ServiceTagKey, "mtx.AccountService"), metric.Tag(metric.MethodTagKey, "SendMoney"))
+	}()
+
+	return &pb.SendMoneyResponse{Status: "testing"}, nil
+}
+
+func (s *Service) Withdraw(ctx context.Context, req *pb.WithdrawRequest) (res *pb.WithdrawResponse, err error) {
+	defer func() {
+		s.metric.OpsResult(err, metric.Tag(metric.ServiceTagKey, "mtx.AccountService"), metric.Tag(metric.MethodTagKey, "Withdraw"))
+	}()
+
+	return &pb.WithdrawResponse{Status: "testing"}, nil
+}
+
+func (s *Service) GetBalance(ctx context.Context, req *pb.GetBalanceRequest) (res *pb.GetBalanceResponse, err error) {
+	defer func() {
+		s.metric.OpsResult(err, metric.Tag(metric.ServiceTagKey, "mtx.AccountService"), metric.Tag(metric.MethodTagKey, "GetBalance"))
+	}()
+
+	return &pb.GetBalanceResponse{Balance: &pkgpb.Money{}}, nil
 }
 
 func (s *Service) OnTested(msg *kafka.Message) {

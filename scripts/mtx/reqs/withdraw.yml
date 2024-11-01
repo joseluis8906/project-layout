@@ -1,9 +1,9 @@
 service: mtx 
 proto: mtx.proto
-method: MtxService.Withdraw
+method: AccountService.Withdraw
 headers:
 body:
-  phone_number: +571234567890
+  phone_number: '+571234567890'
   amount:
-    amount: 5000000
+    value: 5000000
     currency: COP

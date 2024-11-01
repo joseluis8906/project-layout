@@ -28,12 +28,12 @@ message RegisterResponse {}
 
 message PutMoneyRequest {
     message BankAccount {
-        string bank = 1;
         string type = 2;
         string number = 3;
     }
     string phone_number = 1;
     company.Money amount = 2;
+    BankAccount bank = 3;
 }
 
 message PutMoneyResponse {

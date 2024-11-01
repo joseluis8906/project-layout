@@ -10,7 +10,7 @@ import (
 
 func New() *viper.Viper {
 	v := viper.New()
-	v.AddConfigPath("./configs/")
+	v.AddConfigPath("./configs")
 	v.SetConfigName("mtx")
 	v.SetConfigType("yml")
 	err := v.ReadInConfig()
