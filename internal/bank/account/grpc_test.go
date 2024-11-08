@@ -21,12 +21,9 @@ func TestService_CreateAccount(t *testing.T) {
 		Kafka:  kafka.Noop(),
 	})
 
-	svc.AccountPersist = func(ctx context.Context, a account.Account) error { return nil }
-	svc.AccountGet = func(ctx context.Context, atype, number string) (account.Account, error) {
-		return account.Account{}, nil
-	}
+	svc.Account.Persist = func(ctx context.Context, a account.Account) error { return nil }
 
-	input := &pb.CreateAccountRequest{
+	in := &pb.CreateAccountRequest{
 		Type: account.TypeSaving,
 		Owner: &pb.CreateAccountRequest_Owner{
 			Id:       "10",
@@ -39,9 +36,10 @@ func TestService_CreateAccount(t *testing.T) {
 			Currency: "USD",
 		},
 	}
-	got, err := svc.CreateAccount(context.TODO(), input)
+
+	got, err := svc.CreateAccount(context.TODO(), in)
 	want := &pb.CreateAccountResponse{Number: got.Number}
 	if diff := cmp.Diff(want, got, cmpopts.IgnoreUnexported(pb.CreateAccountResponse{})); err != nil || diff != "" {
-		t.Errorf("account.Service.CreateAccount(ctx, %v) = %v, %v; want %v, <nil>\n(-want, +got)\n%s", input, got, err, want, diff)
+		t.Errorf("account.Service.CreateAccount(ctx, %v) = %v, %v; want %v, <nil>\n(-want, +got)\n%s", in, got, err, want, diff)
 	}
 }

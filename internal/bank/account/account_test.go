@@ -64,7 +64,7 @@ func TestValidate(t *testing.T) {
 					Country:  "US",
 				},
 			},
-			want: errors.New("invalid owner's country"),
+			want: errors.New("invalid owner's country \"US\""),
 		},
 	}
 
@@ -73,7 +73,7 @@ func TestValidate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			err := account.Validate(tc.account)
 			if err != nil && tc.want.Error() != err.Error() {
-				t.Errorf("account.Validate(%v) = %v, want %v", tc.account, err, tc.want)
+				t.Errorf("account.Validate(%v) = %v, want = %v", tc.account, err, tc.want)
 			}
 		})
 	}

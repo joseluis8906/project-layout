@@ -27,11 +27,12 @@ type (
 
 	Service struct {
 		pb.UnimplementedAccountServiceServer
-		log            *log.Logger
-		metric         *metric.Collector
-		kafka          *kafka.Conn
-		AccountPersist func(context.Context, Account) error
-		AccountGet     func(ctx context.Context, atype, number string) (Account, error)
+		log     *log.Logger
+		metric  *metric.Collector
+		kafka   *kafka.Conn
+		Account struct {
+			Persist func(context.Context, Account) error
+		}
 	}
 )
 
@@ -41,12 +42,12 @@ const (
 
 func NewGRPC(deps SvcDeps) *Service {
 	s := &Service{
-		log:            deps.Log,
-		metric:         deps.Metric,
-		kafka:          deps.Kafka,
-		AccountPersist: deps.AccountRepo.Persist,
-		AccountGet:     deps.AccountRepo.Get,
+		log:    deps.Log,
+		metric: deps.Metric,
+		kafka:  deps.Kafka,
 	}
+
+	s.Account.Persist = deps.AccountRepo.Persist
 
 	return s
 }
@@ -72,7 +73,7 @@ func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountReques
 		return nil, fmt.Errorf("validating account owner: %w", err)
 	}
 
-	err = s.AccountPersist(ctx, newAccount)
+	err = s.Account.Persist(ctx, newAccount)
 	if err != nil {
 		s.log.Printf("adding account: %v", err)
 		return nil, fmt.Errorf("adding account: %w", err)

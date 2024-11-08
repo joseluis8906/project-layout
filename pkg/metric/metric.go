@@ -1,7 +1,6 @@
 package metric
 
 import (
-	"errors"
 	"fmt"
 	stdlog "log"
 
@@ -48,20 +47,17 @@ type Deps struct {
 func New(deps Deps) *Collector {
 	c := &Collector{
 		log:          deps.Log,
-		promRegister: prometheus.Register,
+		promRegister: prometheus.DefaultRegisterer.Register,
 		counters:     make(map[string]*prometheus.CounterVec),
 		gauges:       make(map[string]*prometheus.GaugeVec),
 		histograms:   make(map[string]*prometheus.HistogramVec),
 		summaries:    make(map[string]*prometheus.SummaryVec),
 	}
 
-	err := c.Register(
-		Counter,
+	err := c.RegisterCounter(
 		endpointResult,
 		"How many endpoint requests are success or failure",
-		[]string{ServiceTagKey, MethodTagKey, ResultTagKey},
-		nil,
-		nil,
+		[]TagKey{ServiceTagKey, MethodTagKey, ResultTagKey},
 	)
 	if err != nil {
 		panic(err)
@@ -71,7 +67,7 @@ func New(deps Deps) *Collector {
 }
 
 func Noop() *Collector {
-	return &Collector{
+	c := &Collector{
 		log:          log.Noop(),
 		promRegister: func(c prometheus.Collector) error { return nil },
 		counters:     make(map[string]*prometheus.CounterVec),
@@ -79,14 +75,30 @@ func Noop() *Collector {
 		histograms:   make(map[string]*prometheus.HistogramVec),
 		summaries:    make(map[string]*prometheus.SummaryVec),
 	}
+
+	err := c.RegisterCounter(
+		endpointResult,
+		"How many endpoint requests are success or failure",
+		[]TagKey{ServiceTagKey, MethodTagKey, ResultTagKey},
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	return c
 }
 
-type tag struct {
-	Key string
-	Val string
-}
+type (
+	TagKey string
+	TagVal string
 
-func Tag(key string, val string) tag {
+	tag struct {
+		Key TagKey
+		Val TagVal
+	}
+)
+
+func Tag(key TagKey, val TagVal) tag {
 	return tag{Key: key, Val: val}
 }
 
@@ -99,24 +111,14 @@ const (
 	Summary   Type = 4
 )
 
-func (c *Collector) Register(kind Type, name, help string, labels []string, buckets []float64, objectives map[float64]float64) error {
-	switch kind {
-	case Counter:
-		return c.registerCounter(name, help, labels)
-	case Gauge:
-		return c.registerGauge(name, help, labels)
-	case Histogram:
-		return c.registerHistogram(name, help, labels, buckets)
-	case Summary:
-		return c.registerSummary(name, help, labels, objectives)
-	default:
-		return errors.New("unsupported metric type")
-	}
-}
-
-func (c *Collector) registerCounter(name, help string, labels []string) error {
+func (c *Collector) RegisterCounter(name, help string, labels []TagKey) error {
 	if _, ok := c.counters[name]; ok {
 		return nil
+	}
+
+	lblNames := make([]string, len(labels))
+	for i, l := range labels {
+		lblNames[i] = string(l)
 	}
 
 	m := prometheus.NewCounterVec(
@@ -124,7 +126,7 @@ func (c *Collector) registerCounter(name, help string, labels []string) error {
 			Name: name,
 			Help: help,
 		},
-		labels,
+		lblNames,
 	)
 	if err := c.promRegister(m); err != nil {
 		return fmt.Errorf("registering %q counter metric: %w", name, err)
@@ -135,9 +137,14 @@ func (c *Collector) registerCounter(name, help string, labels []string) error {
 	return nil
 }
 
-func (c *Collector) registerGauge(name, help string, labels []string) error {
+func (c *Collector) RegisterGauge(name, help string, labels []TagKey) error {
 	if _, ok := c.gauges[name]; ok {
 		return nil
+	}
+
+	lblNames := make([]string, len(labels))
+	for i, l := range labels {
+		lblNames[i] = string(l)
 	}
 
 	m := prometheus.NewGaugeVec(
@@ -145,7 +152,7 @@ func (c *Collector) registerGauge(name, help string, labels []string) error {
 			Name: name,
 			Help: help,
 		},
-		labels,
+		lblNames,
 	)
 
 	if err := c.promRegister(m); err != nil {
@@ -157,9 +164,14 @@ func (c *Collector) registerGauge(name, help string, labels []string) error {
 	return nil
 }
 
-func (c *Collector) registerHistogram(name, help string, labels []string, buckets []float64) error {
+func (c *Collector) RegisterHistogram(name, help string, labels []TagKey, buckets []float64) error {
 	if _, ok := c.histograms[name]; ok {
 		return nil
+	}
+
+	lblNames := make([]string, len(labels))
+	for i, l := range labels {
+		lblNames[i] = string(l)
 	}
 
 	m := prometheus.NewHistogramVec(
@@ -168,7 +180,7 @@ func (c *Collector) registerHistogram(name, help string, labels []string, bucket
 			Help:    help,
 			Buckets: buckets,
 		},
-		labels,
+		lblNames,
 	)
 
 	if err := c.promRegister(m); err != nil {
@@ -180,9 +192,14 @@ func (c *Collector) registerHistogram(name, help string, labels []string, bucket
 	return nil
 }
 
-func (c *Collector) registerSummary(name, help string, labels []string, objectives map[float64]float64) error {
+func (c *Collector) RegisterSummary(name, help string, labels []TagKey, objectives map[float64]float64) error {
 	if _, ok := c.summaries[name]; ok {
 		return nil
+	}
+
+	lblNames := make([]string, len(labels))
+	for i, l := range labels {
+		lblNames[i] = string(l)
 	}
 
 	m := prometheus.NewSummaryVec(
@@ -191,7 +208,7 @@ func (c *Collector) registerSummary(name, help string, labels []string, objectiv
 			Help:       help,
 			Objectives: objectives,
 		},
-		labels,
+		lblNames,
 	)
 
 	if err := c.promRegister(m); err != nil {
@@ -289,7 +306,7 @@ func (c *Collector) counterAdd(name string, val float64, tags ...tag) {
 
 	labels := make(prometheus.Labels)
 	for _, t := range tags {
-		labels[t.Key] = t.Val
+		labels[string(t.Key)] = string(t.Val)
 	}
 
 	m, err := mv.GetMetricWith(labels)
@@ -304,16 +321,18 @@ func (c *Collector) counterInc(name string, tags ...tag) {
 	mv, ok := c.counters[name]
 	if !ok {
 		c.log.Printf("counter %q doesn't exists", name)
+		return
 	}
 
 	labels := make(prometheus.Labels)
 	for _, t := range tags {
-		labels[t.Key] = t.Val
+		labels[string(t.Key)] = string(t.Val)
 	}
 
 	m, err := mv.GetMetricWith(labels)
 	if err != nil {
 		c.log.Printf("getting counter with labels %s: %v", labels, err)
+		return
 	}
 
 	m.Inc()
@@ -323,16 +342,18 @@ func (c *Collector) gaugeSet(name string, val float64, tags ...tag) {
 	mv, ok := c.gauges[name]
 	if !ok {
 		c.log.Printf("gauge %q doesn't exists", name)
+		return
 	}
 
 	labels := make(prometheus.Labels)
 	for _, t := range tags {
-		labels[t.Key] = t.Val
+		labels[string(t.Key)] = string(t.Val)
 	}
 
 	m, err := mv.GetMetricWith(labels)
 	if err != nil {
 		c.log.Printf("getting gauge with labels %s: %v", labels, err)
+		return
 	}
 
 	m.Set(val)
@@ -342,16 +363,18 @@ func (c *Collector) gaugeInc(name string, tags ...tag) {
 	mv, ok := c.gauges[name]
 	if !ok {
 		c.log.Printf("gauge %q doesn't exists", name)
+		return
 	}
 
 	labels := make(prometheus.Labels)
 	for _, t := range tags {
-		labels[t.Key] = t.Val
+		labels[string(t.Key)] = string(t.Val)
 	}
 
 	m, err := mv.GetMetricWith(labels)
 	if err != nil {
 		c.log.Printf("getting gauge with labels %s: %v", labels, err)
+		return
 	}
 
 	m.Inc()
@@ -361,16 +384,18 @@ func (c *Collector) gaugeDec(name string, tags ...tag) {
 	mv, ok := c.gauges[name]
 	if !ok {
 		c.log.Printf("gauge %q doesn't exists", name)
+		return
 	}
 
 	labels := make(prometheus.Labels)
 	for _, t := range tags {
-		labels[t.Key] = t.Val
+		labels[string(t.Key)] = string(t.Val)
 	}
 
 	m, err := mv.GetMetricWith(labels)
 	if err != nil {
 		c.log.Printf("getting gauge with labels %s: %v", labels, err)
+		return
 	}
 
 	m.Dec()
@@ -380,16 +405,18 @@ func (c *Collector) gaugeAdd(name string, val float64, tags ...tag) {
 	mv, ok := c.gauges[name]
 	if !ok {
 		c.log.Printf("gauge %q doesn't exists", name)
+		return
 	}
 
 	labels := make(prometheus.Labels)
 	for _, t := range tags {
-		labels[t.Key] = t.Val
+		labels[string(t.Key)] = string(t.Val)
 	}
 
 	m, err := mv.GetMetricWith(labels)
 	if err != nil {
 		c.log.Printf("getting gauge with labels %s: %v", labels, err)
+		return
 	}
 
 	m.Add(val)
@@ -399,16 +426,18 @@ func (c *Collector) gaugeSub(name string, val float64, tags ...tag) {
 	mv, ok := c.gauges[name]
 	if !ok {
 		c.log.Printf("gauge %q doesn't exists", name)
+		return
 	}
 
 	labels := make(prometheus.Labels)
 	for _, t := range tags {
-		labels[t.Key] = t.Val
+		labels[string(t.Key)] = string(t.Val)
 	}
 
 	m, err := mv.GetMetricWith(labels)
 	if err != nil {
 		c.log.Printf("getting gauge with labels %s: %v", labels, err)
+		return
 	}
 
 	m.Sub(val)
@@ -418,16 +447,18 @@ func (c *Collector) histogramObserve(name string, val float64, tags ...tag) {
 	mv, ok := c.histograms[name]
 	if !ok {
 		c.log.Printf("histogram %q doesn't exists", name)
+		return
 	}
 
 	labels := make(prometheus.Labels)
 	for _, t := range tags {
-		labels[t.Key] = t.Val
+		labels[string(t.Key)] = string(t.Val)
 	}
 
 	m, err := mv.GetMetricWith(labels)
 	if err != nil {
 		c.log.Printf("getting histogram with labels %s: %v", labels, err)
+		return
 	}
 
 	m.Observe(val)
@@ -437,28 +468,30 @@ func (c *Collector) summaryObserve(name string, val float64, tags ...tag) {
 	mv, ok := c.summaries[name]
 	if !ok {
 		c.log.Printf("summary %q doesn't exists", name)
+		return
 	}
 
 	labels := make(prometheus.Labels)
 	for _, t := range tags {
-		labels[t.Key] = t.Val
+		labels[string(t.Key)] = string(t.Val)
 	}
 
 	m, err := mv.GetMetricWith(labels)
 	if err != nil {
 		c.log.Printf("getting summary with labels %s: %v", labels, err)
+		return
 	}
 
 	m.Observe(val)
 }
 
 const (
-	ServiceTagKey = "service"
-	MethodTagKey  = "method"
-	ResultTagKey  = "result"
+	ServiceTagKey TagKey = "service"
+	MethodTagKey  TagKey = "method"
+	ResultTagKey  TagKey = "result"
 
-	SuccessTagVal = "success"
-	FailureTagVal = "failure"
+	SuccessTagVal TagVal = "success"
+	FailureTagVal TagVal = "failure"
 )
 
 func (c *Collector) OpsResult(err error, tags ...tag) {
@@ -471,8 +504,20 @@ func (c *Collector) OpsResult(err error, tags ...tag) {
 	}
 }
 
-func Register(kind Type, name, help string, labels []string, buckets []float64, objetives map[float64]float64) error {
-	return defCollector.Register(kind, name, help, labels, buckets, objetives)
+func RegisterCounter(name, help string, labels []TagKey) error {
+	return defCollector.RegisterCounter(name, help, labels)
+}
+
+func RegisterGauge(name, help string, labels []TagKey) error {
+	return defCollector.RegisterGauge(name, help, labels)
+}
+
+func RegisterHistogram(name, help string, labels []TagKey, buckets []float64) error {
+	return defCollector.RegisterHistogram(name, help, labels, buckets)
+}
+
+func RegisterSummary(name, help string, labels []TagKey, objectives map[float64]float64) error {
+	return defCollector.RegisterSummary(name, help, labels, objectives)
 }
 
 func Add(kind Type, name string, val float64, tags ...tag) {
