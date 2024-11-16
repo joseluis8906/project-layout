@@ -45,3 +45,32 @@ func Validate(a Account) error {
 
 	return nil
 }
+
+func PutMoney(account Account, amount money.Money) {
+	account.Balance = money.Add(account.Balance, amount)
+}
+
+func SendMoney(srcAccount, dstAccount *Account, amount money.Money) error {
+	if err := Debit(srcAccount, amount); err != nil {
+		return fmt.Errorf("debiting amount: %w", err)
+	}
+
+	Credit(dstAccount, amount)
+	return nil
+}
+
+func Debit(account *Account, amount money.Money) error {
+	if !hasBalance(*account, amount) {
+		return errors.New("account without balance")
+	}
+
+	return nil
+}
+
+func Credit(account *Account, amount money.Money) {
+	account.Balance = money.Add(account.Balance, amount)
+}
+
+func hasBalance(account Account, amount money.Money) bool {
+	return account.Balance.Value >= amount.Value
+}

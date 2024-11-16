@@ -90,15 +90,14 @@ func Noop() *Collector {
 
 type (
 	TagKey string
-	TagVal string
 
 	tag struct {
 		Key TagKey
-		Val TagVal
+		Val string
 	}
 )
 
-func Tag(key TagKey, val TagVal) tag {
+func Tag(key TagKey, val string) tag {
 	return tag{Key: key, Val: val}
 }
 
@@ -490,17 +489,27 @@ const (
 	MethodTagKey  TagKey = "method"
 	ResultTagKey  TagKey = "result"
 
-	SuccessTagVal TagVal = "success"
-	FailureTagVal TagVal = "failure"
+	SuccessTagVal string = "success"
+	FailureTagVal string = "failure"
 )
 
-func (c *Collector) OpsResult(err error, tags ...tag) {
+func (c *Collector) OpsResult(err error, service, method string) {
 	if err != nil {
-		tags = append(tags, Tag(ResultTagKey, FailureTagVal))
-		c.Inc(Counter, endpointResult, tags...)
+		c.Inc(
+			Counter,
+			endpointResult,
+			Tag(ResultTagKey, FailureTagVal),
+			Tag(ServiceTagKey, service),
+			Tag(MethodTagKey, method),
+		)
 	} else {
-		tags = append(tags, Tag(ResultTagKey, SuccessTagVal))
-		c.Inc(Counter, endpointResult, tags...)
+		c.Inc(
+			Counter,
+			endpointResult,
+			Tag(ResultTagKey, SuccessTagVal),
+			Tag(ServiceTagKey, service),
+			Tag(MethodTagKey, method),
+		)
 	}
 }
 
@@ -544,6 +553,6 @@ func Observe(kind Type, name string, val float64, tags ...tag) {
 	defCollector.Observe(kind, name, val, tags...)
 }
 
-func OpsResult(err error, tags ...tag) {
-	defCollector.OpsResult(err, tags...)
+func OpsResult(err error, service, method string) {
+	defCollector.OpsResult(err, service, method)
 }

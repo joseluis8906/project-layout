@@ -34,7 +34,7 @@ func NewRepository(deps RepoDeps) *Repository {
 	}
 }
 
-func (r *Repository) Persist(ctx context.Context, account Account) error {
+func (r *Repository) Persist(ctx context.Context, account *Account) error {
 	_, span := otel.Start(ctx, otel.NoTracer, "mtx.AccountRepository/Persist")
 	defer span.End()
 
@@ -47,4 +47,21 @@ func (r *Repository) Persist(ctx context.Context, account Account) error {
 	}
 
 	return nil
+}
+
+func (r *Repository) Get(ctx context.Context, phoneNumber string) (account Account, err error) {
+	_, span := otel.Start(ctx, otel.NoTracer, "mtx.AccountRepository/Get")
+	defer span.End()
+
+	filter := bson.D{
+		{Key: "phone_number", Value: phoneNumber},
+	}
+
+	res := r.db.FindOne(ctx, filter)
+	if err := res.Err(); err != nil {
+		return Account{}, fmt.Errorf("getting account: %w", err)
+	}
+
+	err = res.Decode(&account)
+	return account, err
 }

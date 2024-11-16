@@ -6,10 +6,15 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 exporters:
-  zipkin:
-    endpoint: http://jaeger:9411/api/v2/spans
+  otlphttp/openobserve:
+    endpoint: http://openobserve:5080/api/default
+    headers:
+      Authorization: Basic bGF5b3V0QGxheW91dC5sb2NhbDpsYXlvdXQ=
+      stream-name: default
+  # zipkin:
+    # endpoint: http://jaeger:9411/api/v2/spans
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [zipkin]
+      exporters: [otlphttp/openobserve]

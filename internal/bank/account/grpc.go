@@ -54,7 +54,7 @@ func NewGRPC(deps SvcDeps) *Service {
 
 func (s *Service) CreateAccount(ctx context.Context, req *pb.CreateAccountRequest) (res *pb.CreateAccountResponse, err error) {
 	defer func() {
-		s.metric.OpsResult(err, metric.Tag(metric.ServiceTagKey, "bank.AccountService"), metric.Tag(metric.MethodTagKey, "CreateAccount"))
+		s.metric.OpsResult(err, "bank.AccountService", "CreateAccount")
 	}()
 
 	newAccount := Account{

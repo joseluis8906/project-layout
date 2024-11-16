@@ -30,68 +30,68 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.18
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-    volumes:
-      - elastic-data:/usr/share/elasticsearch/data
-    restart: unless-stopped 
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.17.18
+  #   container_name: elasticsearch
+  #   environment:
+  #     - discovery.type=single-node
+  #   volumes:
+  #     - elastic-data:/usr/share/elasticsearch/data
+  #   restart: unless-stopped 
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.18
-    container_name: kibana
-    restart: unless-stopped
-    environment:
-      - SERVER_BASEPATH=/kibana
-      - SERVER_REWRITEBASEPATH=true
-    volumes:
-      - kibana-data:/usr/share/kibana/data
-    labels:
-      caddy: layout.local
-      caddy.handle_path: /kibana/*
-      caddy.handle_path.0_rewrite: "* /kibana{path}"
-      caddy.handle_path.1_reverse_proxy: "{{upstreams 5601}}"
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:7.17.18
+  #   container_name: kibana
+  #   restart: unless-stopped
+  #   environment:
+  #     - SERVER_BASEPATH=/kibana
+  #     - SERVER_REWRITEBASEPATH=true
+  #   volumes:
+  #     - kibana-data:/usr/share/kibana/data
+  #   labels:
+  #     caddy: layout.local
+  #     caddy.handle_path: /kibana/*
+  #     caddy.handle_path.0_rewrite: "* /kibana{path}"
+  #     caddy.handle_path.1_reverse_proxy: "{{upstreams 5601}}"
 
-  jaeger:
-    image: docker.io/jaegertracing/all-in-one:1.56
-    container_name: jaeger
-    restart: unless-stopped
-    environment:
-      - QUERY_BASE_PATH=/jaeger
-    labels:
-      caddy: layout.local
-      caddy.handle_path: /jaeger/*
-      caddy.handle_path.0_rewrite: "* /jaeger{path}"
-      caddy.handle_path.1_reverse_proxy: "{{upstreams 16686}}"
-    ports:
-      - 4317:4317
+  # jaeger:
+  #   image: docker.io/jaegertracing/all-in-one:1.56
+  #   container_name: jaeger
+  #   restart: unless-stopped
+  #   environment:
+  #     - QUERY_BASE_PATH=/jaeger
+  #   labels:
+  #     caddy: layout.local
+  #     caddy.handle_path: /jaeger/*
+  #     caddy.handle_path.0_rewrite: "* /jaeger{path}"
+  #     caddy.handle_path.1_reverse_proxy: "{{upstreams 16686}}"
+  #   ports:
+  #     - 4317:4317
 
-  grafana:
-    image: docker.io/grafana/grafana
-    container_name: grafana
-    restart: unless-stopped
-    volumes:
-      - grafana-data:/var/lib/grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=${INFRA_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${INFRA_PASSWD}
-      - GF_SERVER_DOMAIN=layout.local
-      - GF_SERVER_ROOT_URL=https://layout.local/grafana/
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
-    labels:
-      caddy: layout.local
-      caddy.handle_path: /grafana/*
-      caddy.handle_path.0_rewrite: "* /grafana{path}"
-      caddy.handle_path.1_reverse_proxy: "{{upstreams 3000}}"
-      caddy.@ws.0_header: Connection *Upgrade*
-      caddy.@ws.1_header: Upgrade websocket
-      caddy.0_reverse_proxy: "@ws {{upstreams 3000}}"
-      caddy.1_reverse_proxy: "/grafana/api/live/ws {{upstreams 3000}}"
+  # grafana:
+  #   image: docker.io/grafana/grafana
+  #   container_name: grafana
+  #   restart: unless-stopped
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=${INFRA_USER}
+  #     - GF_SECURITY_ADMIN_PASSWORD=${INFRA_PASSWD}
+  #     - GF_SERVER_DOMAIN=layout.local
+  #     - GF_SERVER_ROOT_URL=https://layout.local/grafana/
+  #     - GF_SERVER_SERVE_FROM_SUB_PATH=true
+  #   labels:
+  #     caddy: layout.local
+  #     caddy.handle_path: /grafana/*
+  #     caddy.handle_path.0_rewrite: "* /grafana{path}"
+  #     caddy.handle_path.1_reverse_proxy: "{{upstreams 3000}}"
+  #     caddy.@ws.0_header: Connection *Upgrade*
+  #     caddy.@ws.1_header: Upgrade websocket
+  #     caddy.0_reverse_proxy: "@ws {{upstreams 3000}}"
+  #     caddy.1_reverse_proxy: "/grafana/api/live/ws {{upstreams 3000}}"
 
   fluentd:
-    build: ./fluentd
+    image: docker.io/fluent/fluentd:edge-debian
     container_name: fluentd
     restart: unless-stopped
     volumes:
@@ -180,6 +180,29 @@ services:
       - RABBITMQ_DEFAULT_USER=${INFRA_USER}
       - RABBITMQ_DEFAULT_PASS=${INFRA_PASSWD}
 
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve
+    container_name: openobserve
+    restart: unless-stopped
+    ports:
+      - "5080:5080"
+    environment:
+      - ZO_ROOT_USER_EMAIL=${INFRA_USER}@layout.local
+      - ZO_ROOT_USER_PASSWORD=${INFRA_PASSWD}
+      - ZO_DATA_DIR="/data"
+    volumes:
+      - openobserve-data:/data
+  
+  otel-collector:
+    image: docker.io/otel/opentelemetry-collector-contrib:0.113.0
+    container_name: otel-collector
+    restart: unless-stopped
+    ports: 
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./otel-collector-config.yml:/etc/otelcol-contrib/config.yaml
+
 volumes:
   postgres-data:
   elastic-data:
@@ -189,3 +212,4 @@ volumes:
   zookeeper-data:
   kafka-data:
   prometheus-data:
+  openobserve-data:

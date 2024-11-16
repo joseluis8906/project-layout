@@ -43,8 +43,8 @@ func ExampleInc() {
 	metric.Inc(
 		metric.Counter,
 		HttpRequestsTotal,
-		metric.Tag(HttpCode, metric.TagVal(fmt.Sprintf("%d", http.StatusNotFound))),
-		metric.Tag(HttpMethod, metric.TagVal(http.MethodPost)),
+		metric.Tag(HttpCode, fmt.Sprintf("%d", http.StatusNotFound)),
+		metric.Tag(HttpMethod, http.MethodPost),
 	)
 
 	metric.Inc(metric.Gauge, BlobStorageOpsQueued)
